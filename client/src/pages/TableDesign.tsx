@@ -4,45 +4,47 @@ import pokerTableImg from '../assets/poker-table.jpg';
 const TableDesign: React.FC = () => {
   const [showSeats, setShowSeats] = useState(true);
   
-  // Dealer position - bottom middle
+  // Dealer position - bottom middle on the black border
   const dealerPosition = {
     left: 50, // center horizontally
-    top: 93, // very bottom of the table
+    top: 92, // bottom on the black border
   };
   
   // Custom seat positions with specific requirements:
   // 1. Seat 1 right next to dealer
   // 2. No seat overlapping dealer
   // 3. Seat 5 directly opposite dealer
-  // 4. All seats positioned exactly on the border of the table
-  const seatPositions = [
-    // Seat 1 - right next to dealer (bottom right)
-    { position: 1, left: 63, top: 83 },
+  // 4. All seats positioned exactly on the black border of the table
+  
+  // Defining the exact oval border coordinates
+  // These values create an oval that exactly matches the black border of the table
+  const borderRadiusX = 48; // % of container width
+  const borderRadiusY = 42; // % of container height
+  
+  // Dealer position calculation
+  const dealerAngle = Math.PI; // Bottom position (180 degrees)
+  
+  // Calculate positions for 9 seats exactly on the border
+  const seatPositions = Array(9).fill(0).map((_, i) => {
+    // Calculate evenly distributed angles, starting from right of dealer
+    // For 9 seats, we need to distribute them around the oval
+    // Start from -30 degrees (right of dealer) and go 300 degrees clockwise
+    // This leaves a 60 degree gap at the bottom for the dealer
+    const startAngleDegrees = -30;
+    const endAngleDegrees = 300; // Full circle minus 60 degrees for dealer area
+    const totalAngle = endAngleDegrees - startAngleDegrees;
     
-    // Seat 2 - right side of table
-    { position: 2, left: 80, top: 65 },
+    // Divide the available angle into 8 segments for the 9 positions
+    const stepAngle = totalAngle / 8;
+    const angleDegrees = startAngleDegrees + (i * stepAngle);
+    const angleRadians = angleDegrees * (Math.PI / 180);
     
-    // Seat 3 - top right
-    { position: 3, left: 80, top: 35 },
+    // Use the border radius values to position seats exactly on the border
+    const left = 50 + borderRadiusX * Math.cos(angleRadians);
+    const top = 50 + borderRadiusY * Math.sin(angleRadians);
     
-    // Seat 4 - top right center
-    { position: 4, left: 65, top: 17 },
-    
-    // Seat 5 - directly opposite dealer (top middle)
-    { position: 5, left: 50, top: 13 },
-    
-    // Seat 6 - top left center
-    { position: 6, left: 35, top: 17 },
-    
-    // Seat 7 - top left
-    { position: 7, left: 20, top: 35 },
-    
-    // Seat 8 - left side of table
-    { position: 8, left: 20, top: 65 },
-    
-    // Seat 9 - left next to dealer (bottom left)
-    { position: 9, left: 37, top: 83 },
-  ];
+    return { position: i + 1, left, top };
+  });
   
   return (
     <div className="flex flex-col min-h-screen">
