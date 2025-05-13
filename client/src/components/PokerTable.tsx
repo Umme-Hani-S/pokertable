@@ -471,8 +471,8 @@ const PokerTable: React.FC = () => {
               </Select>
             </div>
             
-            {/* Player selection for Playing status */}
-            {newStatus === 'Playing' && (
+            {/* Player selection - only show for Playing status when not transitioning from Break/Blocked */}
+            {newStatus === 'Playing' && !((selectedSeat?.status === 'Break' || selectedSeat?.status === 'Blocked') && selectedSeat?.playerId) && (
               <div className="space-y-4">
                 {selectedSeat?.status === 'Playing' && selectedSeat?.playerId ? (
                   <div className="mb-2 p-3 bg-yellow-50 border border-yellow-200 rounded">
@@ -558,16 +558,48 @@ const PokerTable: React.FC = () => {
               </div>
             )}
             
-            {/* Special message when going from Blocked/Break to Playing */}
-            {selectedSeat && (selectedSeat.status === 'Blocked' || selectedSeat.status === 'Break') && 
-              newStatus === 'Playing' && selectedSeat.playerId && (
-              <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded">
-                <p className="text-xs text-gray-500">
-                  {selectedSeat.status === 'Break' 
-                    ? 'Timer will resume when player returns from break' 
-                    : 'Timer will restart when player returns to playing'}
-                </p>
-              </div>
+            {/* Special messages for status transitions with existing players */}
+            {selectedSeat && selectedSeat.playerId && (
+              <>
+                {/* Going from Break/Blocked to Playing */}
+                {(selectedSeat.status === 'Blocked' || selectedSeat.status === 'Break') && 
+                  newStatus === 'Playing' && (
+                  <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded">
+                    <p className="text-sm font-medium">
+                      Player: <span className="font-bold">{getPlayerById(selectedSeat.playerId)?.name}</span>
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {selectedSeat.status === 'Break' 
+                        ? 'Timer will resume when player returns from break' 
+                        : 'Timer will restart when player returns to playing'}
+                    </p>
+                  </div>
+                )}
+                
+                {/* Going from Playing to Break */}
+                {selectedSeat.status === 'Playing' && newStatus === 'Break' && (
+                  <div className="mt-2 p-3 bg-orange-50 border border-orange-200 rounded">
+                    <p className="text-sm font-medium">
+                      Player going on break: <span className="font-bold">{getPlayerById(selectedSeat.playerId)?.name}</span>
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Timer will pause while player is on break
+                    </p>
+                  </div>
+                )}
+                
+                {/* Going from Playing to Blocked */}
+                {selectedSeat.status === 'Playing' && newStatus === 'Blocked' && (
+                  <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded">
+                    <p className="text-sm font-medium">
+                      Blocking seat for: <span className="font-bold">{getPlayerById(selectedSeat.playerId)?.name}</span>
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Timer will pause while seat is blocked
+                    </p>
+                  </div>
+                )}
+              </>
             )}
             
             {error && (
