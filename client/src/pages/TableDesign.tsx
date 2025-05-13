@@ -7,30 +7,41 @@ const TableDesign: React.FC = () => {
   // Dealer position - bottom middle
   const dealerPosition = {
     left: 50, // center horizontally
-    top: 90, // bottom area - adjusted to be more at the bottom
+    top: 93, // very bottom of the table
   };
   
-  // Calculate 9 seat positions around the table
-  // Start from dealer's right and go clockwise
-  const seatPositions = Array(9).fill(0).map((_, i) => {
-    // Distributor starts from -20 degrees (bottom right, to dealer's right) and goes 320 degrees around
-    // Full circle is 360 degrees, but we're positioning 9 positions within 320 degrees
-    // Converting to radians (multiply by PI/180)
-    const startAngle = (-20) * (Math.PI / 180);
-    const totalAngle = 320 * (Math.PI / 180); // 320 degrees in radians
+  // Custom seat positions with specific requirements:
+  // 1. Seat 1 right next to dealer
+  // 2. No seat overlapping dealer
+  // 3. Seat 5 directly opposite dealer
+  const seatPositions = [
+    // Seat 1 - right next to dealer (bottom right)
+    { position: 1, left: 62, top: 87 },
     
-    // Distribute 9 seats evenly within that 320-degree arc
-    const angle = startAngle + (i * (totalAngle / 9));
+    // Seat 2 - right side of table
+    { position: 2, left: 77, top: 70 },
     
-    // For oval table, use different radii for horizontal vs vertical positions
-    const radiusX = 45; // % of container width
-    const radiusY = 35; // % of container height (adjusted for oval shape)
+    // Seat 3 - top right
+    { position: 3, left: 77, top: 30 },
     
-    const left = 50 + radiusX * Math.cos(angle);
-    const top = 50 + radiusY * Math.sin(angle);
+    // Seat 4 - top right center
+    { position: 4, left: 65, top: 15 },
     
-    return { left, top, position: i + 1 };
-  });
+    // Seat 5 - directly opposite dealer (top middle)
+    { position: 5, left: 50, top: 10 },
+    
+    // Seat 6 - top left center
+    { position: 6, left: 35, top: 15 },
+    
+    // Seat 7 - top left
+    { position: 7, left: 23, top: 30 },
+    
+    // Seat 8 - left side of table
+    { position: 8, left: 23, top: 70 },
+    
+    // Seat 9 - left next to dealer (bottom left)
+    { position: 9, left: 38, top: 87 },
+  ];
   
   return (
     <div className="flex flex-col min-h-screen">
