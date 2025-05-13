@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Seat, Player, STATUS_COLORS } from '../../../shared/types';
+import type { Seat, Player } from '@/../../shared/types';
+import { STATUS_COLORS } from '@/../../shared/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from './ui/select';
 import { Button } from './ui/button';
