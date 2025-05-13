@@ -201,10 +201,27 @@ const PokerTable: React.FC = () => {
       
       // Handle different status transitions
       if (newStatus === 'Playing') {
+        // If we're staying at "Playing" status but potentially switching players
+        if (selectedSeat.status === 'Playing') {
+          // User might be switching players or keeping the same one
+          if (showNewPlayerInput && newPlayerName.trim()) {
+            // Create new player
+            const newPlayer = await createPlayer(newPlayerName.trim());
+            setPlayers(prevPlayers => [...prevPlayers, newPlayer]);
+            playerId = newPlayer.id;
+          } else if (selectedPlayerId) {
+            playerId = Number(selectedPlayerId);
+          } else {
+            // Keep the current player if nothing was selected
+            playerId = selectedSeat.playerId;
+          }
+        }
         // For Break or Blocked seats, we keep the same player when transitioning to Playing
-        if ((selectedSeat.status === 'Break' || selectedSeat.status === 'Blocked') && selectedSeat.playerId) {
+        else if ((selectedSeat.status === 'Break' || selectedSeat.status === 'Blocked') && selectedSeat.playerId) {
           playerId = selectedSeat.playerId;
-        } else if (showNewPlayerInput && newPlayerName.trim()) {
+        } 
+        // For new/open seats, require player selection
+        else if (showNewPlayerInput && newPlayerName.trim()) {
           // Create new player
           const newPlayer = await createPlayer(newPlayerName.trim());
           setPlayers(prevPlayers => [...prevPlayers, newPlayer]);
@@ -231,17 +248,29 @@ const PokerTable: React.FC = () => {
       const updatedSeat = await updateSeatStatus(selectedSeat.id, newStatus, playerId);
       
       // Handle time tracking based on status changes
+      
+      // Case 1: Switching players or removing a player
       if (currentPlayer && currentPlayer !== playerId) {
         // Previous player is no longer in this seat, stop their timer
         timeTracker.stopTracking(currentPlayer);
       }
       
-      if (newStatus === 'Playing' && playerId) {
-        // Start tracking time for the player
-        timeTracker.startTracking(playerId);
-      } else if (newStatus !== 'Playing' && currentPlayer) {
-        // If status changed from Playing to something else, stop timing
-        timeTracker.stopTracking(currentPlayer);
+      // Case 2: Status is changing
+      if (selectedSeat.status !== newStatus) {
+        if (newStatus === 'Playing' && playerId) {
+          // Starting to play - start timer for the player
+          timeTracker.startTracking(playerId);
+        } else if (selectedSeat.status === 'Playing' && currentPlayer) {
+          // Was playing, now something else - stop the timer
+          timeTracker.stopTracking(currentPlayer);
+        }
+      } 
+      // Case 3: Status remains "Playing" but player is changing
+      else if (newStatus === 'Playing' && selectedSeat.status === 'Playing' && playerId !== currentPlayer) {
+        if (playerId) {
+          // Start timing for the new player
+          timeTracker.startTracking(playerId);
+        }
       }
       
       // Update the seats state
@@ -442,11 +471,20 @@ const PokerTable: React.FC = () => {
               </Select>
             </div>
             
-            {/* Player selection for Playing status only - hide when coming from Break/Blocked with existing player */}
-            {newStatus === 'Playing' && !(
-              (selectedSeat?.status === 'Break' || selectedSeat?.status === 'Blocked') && selectedSeat?.playerId
-            ) && (
+            {/* Player selection for Playing status */}
+            {newStatus === 'Playing' && (
               <div className="space-y-4">
+                {selectedSeat?.status === 'Playing' && selectedSeat?.playerId ? (
+                  <div className="mb-2 p-3 bg-yellow-50 border border-yellow-200 rounded">
+                    <p className="text-sm font-medium">
+                      Current player: <span className="font-bold">{getPlayerById(selectedSeat.playerId)?.name}</span>
+                    </p>
+                    <p className="text-xs text-yellow-700 mt-1">
+                      Switching players will stop timing for current player
+                    </p>
+                  </div>
+                ) : null}
+                
                 <div className="flex items-center space-x-2">
                   <input 
                     type="checkbox" 
