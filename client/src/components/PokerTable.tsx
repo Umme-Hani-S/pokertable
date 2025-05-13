@@ -67,10 +67,10 @@ const PokerTable: React.FC = () => {
     top: 92,
   };
   
-  // Seat positions - exact same layout from design
+  // Seat positions - exact same layout from design with adjusted positions for 1, 9, 4, 6
   const seatPositions = [
-    // Seat 1 - LEFT of dealer (bottom left)
-    { position: 1, left: 38, top: 87 },
+    // Seat 1 - LEFT of dealer (bottom left) - moved further out
+    { position: 1, left: 33, top: 87 },
     
     // Seat 2 - left side of table (moved further out)
     { position: 2, left: 10, top: 65 },
@@ -78,14 +78,14 @@ const PokerTable: React.FC = () => {
     // Seat 3 - top left (moved further out)
     { position: 3, left: 10, top: 35 },
     
-    // Seat 4 - top left center
-    { position: 4, left: 35, top: 15 },
+    // Seat 4 - top left center - moved further out
+    { position: 4, left: 30, top: 15 },
     
     // Seat 5 - directly opposite dealer (top middle)
     { position: 5, left: 50, top: 8 },
     
-    // Seat 6 - top right center
-    { position: 6, left: 65, top: 15 },
+    // Seat 6 - top right center - moved further out
+    { position: 6, left: 70, top: 15 },
     
     // Seat 7 - top right (moved further out)
     { position: 7, left: 90, top: 35 },
@@ -93,8 +93,8 @@ const PokerTable: React.FC = () => {
     // Seat 8 - right side of table (moved further out)
     { position: 8, left: 90, top: 65 },
     
-    // Seat 9 - right of dealer (bottom right)
-    { position: 9, left: 62, top: 87 },
+    // Seat 9 - right of dealer (bottom right) - moved further out
+    { position: 9, left: 67, top: 87 },
   ];
   
   // Fetch data on component mount
@@ -245,9 +245,9 @@ const PokerTable: React.FC = () => {
                         onClick={() => handleSeatClick(seat)}
                       >
                         <div className="flex flex-col items-center justify-center">
-                          <span className="font-bold text-sm text-white">{position.position}</span>
+                          <span className="font-bold text-sm text-black">{position.position}</span>
                           {seat.status === 'Playing' && player && (
-                            <span className="text-[8px] text-white font-semibold truncate max-w-[35px]">{player.name}</span>
+                            <span className="text-[8px] text-black font-semibold truncate max-w-[35px]">{player.name}</span>
                           )}
                         </div>
                       </div>
