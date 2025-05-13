@@ -18,36 +18,43 @@ const TableDesign: React.FC = () => {
   
   // Defining the exact oval border coordinates
   // These values create an oval that exactly matches the black border of the table
-  const borderRadiusX = 49; // % of container width - adjusted to match border exactly
-  const borderRadiusY = 44; // % of container height - adjusted to match border exactly
+  const borderRadiusX = 48; // % of container width
+  const borderRadiusY = 42; // % of container height
   
   // Dealer position calculation
   const dealerAngle = Math.PI; // Bottom position (180 degrees)
   
-  // Calculate positions for 9 seats exactly on the black border
-  // Using mathematical formula to ensure precise border placement
-  // - Seat #1 is positioned to LEFT of dealer
-  // - Seat #5 is positioned opposite the dealer
-  // - All seats are equidistant on the border with no overlap
-  const seatPositions = Array(9).fill(0).map((_, i) => {
-    // Start with seat 1 to the left of dealer and go clockwise
-    // Formula distributes seats perfectly around the oval
-    const index = i;
-    // Convert index to angle (in degrees) - distribute 9 seats around the oval
-    // We reserve about 40 degrees at the bottom for the dealer
-    const angleRange = 320; // degrees to distribute seats
-    const startAngle = 200; // degrees - leftmost position near dealer
-    const stepAngle = angleRange / 8; // divide by (numSeats - 1)
+  // Custom fixed positions for all 9 seats
+  // Ensuring seat #1 is to LEFT of dealer, seat #5 is opposite dealer
+  // Exact positions on the black border to avoid overlapping
+  const seatPositions = [
+    // Seat 1 - LEFT of dealer (bottom left)
+    { position: 1, left: 38, top: 87 },
     
-    const angleDegrees = (startAngle + (index * stepAngle)) % 360;
-    const angleRadians = angleDegrees * (Math.PI / 180);
+    // Seat 2 - left side of table (adjusted to be exactly on border)
+    { position: 2, left: 18, top: 65 },
     
-    // Use the border radius values to position exactly on the black border
-    const left = 50 + (borderRadiusX * Math.cos(angleRadians));
-    const top = 50 + (borderRadiusY * Math.sin(angleRadians));
+    // Seat 3 - top left (adjusted to be exactly on border)
+    { position: 3, left: 18, top: 35 },
     
-    return { position: i + 1, left, top };
-  });
+    // Seat 4 - top left center
+    { position: 4, left: 35, top: 15 },
+    
+    // Seat 5 - directly opposite dealer (top middle)
+    { position: 5, left: 50, top: 8 },
+    
+    // Seat 6 - top right center
+    { position: 6, left: 65, top: 15 },
+    
+    // Seat 7 - top right (adjusted to be exactly on border)
+    { position: 7, left: 82, top: 35 },
+    
+    // Seat 8 - right side of table (adjusted to be exactly on border)
+    { position: 8, left: 82, top: 65 },
+    
+    // Seat 9 - right of dealer (bottom right)
+    { position: 9, left: 62, top: 87 },
+  ];
   
   return (
     <div className="flex flex-col min-h-screen">
