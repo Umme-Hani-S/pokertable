@@ -4,12 +4,31 @@ import pokerTableImg from '../assets/poker-table.jpg';
 const TableDesign: React.FC = () => {
   const [showSeats, setShowSeats] = useState(true);
   
-  // Calculate positions for seats around the table
-  const seatPositions = Array(8).fill(0).map((_, i) => {
-    const angle = ((i) / 8) * Math.PI * 2 - Math.PI / 2;
-    const radius = 45; // % of container
-    const left = 50 + radius * Math.cos(angle);
-    const top = 50 + radius * Math.sin(angle);
+  // Dealer position - bottom middle
+  const dealerPosition = {
+    left: 50, // center horizontally
+    top: 90, // bottom area - adjusted to be more at the bottom
+  };
+  
+  // Calculate 9 seat positions around the table
+  // Start from dealer's right and go clockwise
+  const seatPositions = Array(9).fill(0).map((_, i) => {
+    // Distributor starts from -20 degrees (bottom right, to dealer's right) and goes 320 degrees around
+    // Full circle is 360 degrees, but we're positioning 9 positions within 320 degrees
+    // Converting to radians (multiply by PI/180)
+    const startAngle = (-20) * (Math.PI / 180);
+    const totalAngle = 320 * (Math.PI / 180); // 320 degrees in radians
+    
+    // Distribute 9 seats evenly within that 320-degree arc
+    const angle = startAngle + (i * (totalAngle / 9));
+    
+    // For oval table, use different radii for horizontal vs vertical positions
+    const radiusX = 45; // % of container width
+    const radiusY = 35; // % of container height (adjusted for oval shape)
+    
+    const left = 50 + radiusX * Math.cos(angle);
+    const top = 50 + radiusY * Math.sin(angle);
+    
     return { left, top, position: i + 1 };
   });
   
@@ -25,7 +44,7 @@ const TableDesign: React.FC = () => {
         <div className="max-w-5xl mx-auto flex flex-col space-y-8">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold">Exact Reference Image</h2>
+              <h2 className="text-xl font-semibold">9-Seat Poker Table</h2>
               <div className="flex items-center space-x-2">
                 <span className="text-sm text-gray-600 dark:text-gray-400">Show Seat Positions</span>
                 <button 
@@ -49,6 +68,19 @@ const TableDesign: React.FC = () => {
                 className="w-full h-auto rounded-lg shadow-md" 
               />
               
+              {/* Dealer position */}
+              {showSeats && (
+                <div 
+                  className="absolute w-12 h-12 rounded-full bg-white bg-opacity-90 border-2 border-red-500 shadow-md flex items-center justify-center transform -translate-x-1/2 -translate-y-1/2 z-20"
+                  style={{ 
+                    left: `${dealerPosition.left}%`, 
+                    top: `${dealerPosition.top}%`,
+                  }}
+                >
+                  <span className="text-red-700 font-bold">D</span>
+                </div>
+              )}
+              
               {/* Seat positions */}
               {showSeats && (
                 <div className="absolute inset-0">
@@ -70,17 +102,17 @@ const TableDesign: React.FC = () => {
             
             <div className="mt-6 space-y-4">
               <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-md">
-                <h3 className="text-lg font-medium mb-2">Design Notes</h3>
+                <h3 className="text-lg font-medium mb-2">Table Layout</h3>
                 <ul className="list-disc pl-5 space-y-1 text-sm">
-                  <li>Exact oval shape with clean black border</li>
-                  <li>Green felt surface with subtle inner outline</li>
-                  <li>5 card positions in the center</li>
-                  <li>Toggle seat positions to see potential player spots</li>
+                  <li><span className="font-medium">Dealer Position:</span> Bottom middle (D)</li>
+                  <li><span className="font-medium">Seat #1:</span> Starting to dealer's right</li>
+                  <li><span className="font-medium">Seat Arrangement:</span> 9 seats positioned clockwise</li>
+                  <li><span className="font-medium">Table Design:</span> Exact oval shape with green felt surface and black border</li>
                 </ul>
               </div>
               
               <div className="text-center text-gray-500 text-sm">
-                This design uses the reference image directly to ensure visual accuracy.
+                The design uses the reference image with 9 seats placed around the table.
               </div>
             </div>
           </div>
