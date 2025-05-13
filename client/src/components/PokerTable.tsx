@@ -322,7 +322,8 @@ const PokerTable: React.FC = () => {
                       >
                         <div className="flex flex-col items-center justify-center">
                           <span className="font-bold text-sm text-black">{position.position}</span>
-                          {seat.status === 'Playing' && player && (
+                          {/* Display player name for both Playing and Break status */}
+                          {(seat.status === 'Playing' || seat.status === 'Break' || seat.status === 'Blocked') && player && (
                             <span className="text-[8px] text-black font-semibold truncate max-w-[35px]">{player.name}</span>
                           )}
                         </div>
@@ -481,29 +482,41 @@ const PokerTable: React.FC = () => {
               </div>
             )}
             
-            {/* Display current player when status is Break */}
-            {newStatus === 'Break' && selectedSeat && selectedSeat.playerId && (
-              <div className="mt-2 p-3 bg-orange-50 border border-orange-200 rounded">
+            {/* Display current player when seat has a player (Break, Blocked, Playing) */}
+            {selectedSeat && selectedSeat.playerId && 
+              (selectedSeat.status === 'Break' || 
+               selectedSeat.status === 'Blocked' || 
+               selectedSeat.status === 'Playing') && (
+              <div className={`mt-2 p-3 rounded border ${
+                selectedSeat.status === 'Break' ? 'bg-orange-50 border-orange-200' : 
+                selectedSeat.status === 'Blocked' ? 'bg-red-50 border-red-200' : 
+                'bg-blue-50 border-blue-200'
+              }`}>
                 <p className="text-sm font-medium">
-                  Player on break: {getPlayerById(selectedSeat.playerId)?.name}
+                  {selectedSeat.status === 'Break' ? 'Player on break: ' : 
+                   selectedSeat.status === 'Blocked' ? 'Seat blocked by: ' : 
+                   'Current player: '}
+                  <span className="font-bold">{getPlayerById(selectedSeat.playerId)?.name}</span>
                 </p>
                 <p className="text-xs text-gray-500 mt-1">
-                  Time will pause while player is on break
+                  {selectedSeat.status === 'Break' ? 'Time paused while on break' : 
+                   selectedSeat.status === 'Blocked' ? 'Seat blocked by this player' : 
+                   'Currently playing'}
                 </p>
+                {selectedSeat.status === 'Playing' || selectedSeat.status === 'Break' ? (
+                  <p className="text-xs font-medium mt-1">
+                    Time at table: {timeDisplay[selectedSeat.playerId] || '00:00:00'}
+                  </p>
+                ) : null}
               </div>
             )}
             
-            {/* Display current player when transitioning from Blocked to anything else */}
-            {selectedSeat && selectedSeat.status === 'Blocked' && selectedSeat.playerId && (
-              <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded">
-                <p className="text-sm font-medium">
-                  Seat blocked by: {getPlayerById(selectedSeat.playerId)?.name}
+            {/* Special message when going from Blocked to Playing */}
+            {selectedSeat && selectedSeat.status === 'Blocked' && newStatus === 'Playing' && selectedSeat.playerId && (
+              <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded">
+                <p className="text-xs text-gray-500">
+                  Timer will restart when player returns to playing
                 </p>
-                {newStatus === 'Playing' && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    Timer will restart when player returns to playing
-                  </p>
-                )}
               </div>
             )}
             
