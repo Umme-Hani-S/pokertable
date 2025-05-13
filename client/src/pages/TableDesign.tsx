@@ -31,11 +31,11 @@ const TableDesign: React.FC = () => {
     // Seat 1 - LEFT of dealer (bottom left)
     { position: 1, left: 38, top: 87 },
     
-    // Seat 2 - left side of table
-    { position: 2, left: 23, top: 70 },
+    // Seat 2 - left side of table (adjusted to be exactly on border)
+    { position: 2, left: 18, top: 65 },
     
-    // Seat 3 - top left
-    { position: 3, left: 23, top: 30 },
+    // Seat 3 - top left (adjusted to be exactly on border)
+    { position: 3, left: 18, top: 35 },
     
     // Seat 4 - top left center
     { position: 4, left: 35, top: 15 },
@@ -46,11 +46,11 @@ const TableDesign: React.FC = () => {
     // Seat 6 - top right center
     { position: 6, left: 65, top: 15 },
     
-    // Seat 7 - top right
-    { position: 7, left: 77, top: 30 },
+    // Seat 7 - top right (adjusted to be exactly on border)
+    { position: 7, left: 82, top: 35 },
     
-    // Seat 8 - right side of table
-    { position: 8, left: 77, top: 70 },
+    // Seat 8 - right side of table (adjusted to be exactly on border)
+    { position: 8, left: 82, top: 65 },
     
     // Seat 9 - right of dealer (bottom right)
     { position: 9, left: 62, top: 87 },
