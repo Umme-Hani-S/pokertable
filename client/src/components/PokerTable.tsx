@@ -201,9 +201,17 @@ const PokerTable: React.FC = () => {
       
       // Handle different status transitions
       if (newStatus === 'Playing') {
-        // If we're staying at "Playing" status but potentially switching players
+        // For Playing status, handle player assignment
         if (selectedSeat.status === 'Playing') {
-          // User might be switching players or keeping the same one
+          // Keep the current player
+          playerId = selectedSeat.playerId;
+        }
+        // For Break or Blocked seats, keep the same player when transitioning to Playing
+        else if ((selectedSeat.status === 'Break' || selectedSeat.status === 'Blocked') && selectedSeat.playerId) {
+          playerId = selectedSeat.playerId;
+        } 
+        // For Open seats, require player selection from UI
+        else if (selectedSeat.status === 'Open') {
           if (showNewPlayerInput && newPlayerName.trim()) {
             // Create new player
             const newPlayer = await createPlayer(newPlayerName.trim());
@@ -212,24 +220,11 @@ const PokerTable: React.FC = () => {
           } else if (selectedPlayerId) {
             playerId = Number(selectedPlayerId);
           } else {
-            // Keep the current player if nothing was selected
-            playerId = selectedSeat.playerId;
+            setError('Please select a player or create a new one');
+            return;
           }
-        }
-        // For Break or Blocked seats, we keep the same player when transitioning to Playing
-        else if ((selectedSeat.status === 'Break' || selectedSeat.status === 'Blocked') && selectedSeat.playerId) {
-          playerId = selectedSeat.playerId;
-        } 
-        // For new/open seats, require player selection
-        else if (showNewPlayerInput && newPlayerName.trim()) {
-          // Create new player
-          const newPlayer = await createPlayer(newPlayerName.trim());
-          setPlayers(prevPlayers => [...prevPlayers, newPlayer]);
-          playerId = newPlayer.id;
-        } else if (selectedPlayerId) {
-          playerId = Number(selectedPlayerId);
         } else {
-          setError('Please select a player or create a new one');
+          setError('Cannot determine player for this transition');
           return;
         }
       } else if (newStatus === 'Break' || newStatus === 'Blocked') {
@@ -471,20 +466,9 @@ const PokerTable: React.FC = () => {
               </Select>
             </div>
             
-            {/* Player selection - only show for Playing status when not transitioning from Break/Blocked */}
-            {newStatus === 'Playing' && !((selectedSeat?.status === 'Break' || selectedSeat?.status === 'Blocked') && selectedSeat?.playerId) && (
+            {/* Player selection - only show when no player is assigned yet */}
+            {newStatus === 'Playing' && selectedSeat?.status === 'Open' && (
               <div className="space-y-4">
-                {selectedSeat?.status === 'Playing' && selectedSeat?.playerId ? (
-                  <div className="mb-2 p-3 bg-yellow-50 border border-yellow-200 rounded">
-                    <p className="text-sm font-medium">
-                      Current player: <span className="font-bold">{getPlayerById(selectedSeat.playerId)?.name}</span>
-                    </p>
-                    <p className="text-xs text-yellow-700 mt-1">
-                      Switching players will stop timing for current player
-                    </p>
-                  </div>
-                ) : null}
-                
                 <div className="flex items-center space-x-2">
                   <input 
                     type="checkbox" 
@@ -530,10 +514,7 @@ const PokerTable: React.FC = () => {
             )}
             
             {/* Display current player when seat has a player (Break, Blocked, Playing) */}
-            {selectedSeat && selectedSeat.playerId && 
-              (selectedSeat.status === 'Break' || 
-               selectedSeat.status === 'Blocked' || 
-               selectedSeat.status === 'Playing') && (
+            {selectedSeat && selectedSeat.playerId && (
               <div className={`mt-2 p-3 rounded border ${
                 selectedSeat.status === 'Break' ? 'bg-orange-50 border-orange-200' : 
                 selectedSeat.status === 'Blocked' ? 'bg-red-50 border-red-200' : 
