@@ -67,10 +67,25 @@ export class MemStorage implements IStorage {
     const seat = this.seats.get(id);
     if (!seat) return undefined;
     
+    // New player management logic:
+    // - For Playing: set the provided playerId
+    // - For Break or Blocked: keep existing playerId if coming from Playing, otherwise use provided ID 
+    // - For Open or Closed: clear the playerId (player left the seat)
+    let updatedPlayerId = undefined;
+    
+    if (status === 'Playing') {
+      // Playing seats always need a player ID
+      updatedPlayerId = playerId;
+    } else if (status === 'Break' || status === 'Blocked') {
+      // Keep the current player ID if it exists, otherwise use the provided one
+      updatedPlayerId = seat.playerId || playerId;
+    }
+    // Open and Closed will get undefined playerId
+    
     const updatedSeat: Seat = {
       ...seat,
       status,
-      playerId: status === 'Playing' ? playerId : undefined
+      playerId: updatedPlayerId
     };
     
     this.seats.set(id, updatedSeat);

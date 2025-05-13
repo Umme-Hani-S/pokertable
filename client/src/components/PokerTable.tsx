@@ -199,10 +199,10 @@ const PokerTable: React.FC = () => {
     try {
       let playerId = undefined;
       
-      // If status is 'Playing', we need a player ID
+      // Handle different status transitions
       if (newStatus === 'Playing') {
-        // For blocked seats, we keep the same player when transitioning to Playing
-        if (selectedSeat.status === 'Blocked' && selectedSeat.playerId) {
+        // For Break or Blocked seats, we keep the same player when transitioning to Playing
+        if ((selectedSeat.status === 'Break' || selectedSeat.status === 'Blocked') && selectedSeat.playerId) {
           playerId = selectedSeat.playerId;
         } else if (showNewPlayerInput && newPlayerName.trim()) {
           // Create new player
@@ -215,7 +215,14 @@ const PokerTable: React.FC = () => {
           setError('Please select a player or create a new one');
           return;
         }
+      } else if (newStatus === 'Break' || newStatus === 'Blocked') {
+        // For Break or Blocked, keep the current player ID if transitioning from Playing
+        if (selectedSeat.status === 'Playing' && selectedSeat.playerId) {
+          playerId = selectedSeat.playerId;
+        }
+        // Otherwise, playerId remains undefined and will be cleared
       }
+      // For Open or Closed, playerId should be undefined
       
       // Check for player status change for time tracking
       const currentPlayer = selectedSeat.playerId;
@@ -435,8 +442,10 @@ const PokerTable: React.FC = () => {
               </Select>
             </div>
             
-            {/* Player selection for Playing status only - hide when coming from Blocked with existing player */}
-            {newStatus === 'Playing' && !(selectedSeat?.status === 'Blocked' && selectedSeat?.playerId) && (
+            {/* Player selection for Playing status only - hide when coming from Break/Blocked with existing player */}
+            {newStatus === 'Playing' && !(
+              (selectedSeat?.status === 'Break' || selectedSeat?.status === 'Blocked') && selectedSeat?.playerId
+            ) && (
               <div className="space-y-4">
                 <div className="flex items-center space-x-2">
                   <input 
@@ -511,11 +520,14 @@ const PokerTable: React.FC = () => {
               </div>
             )}
             
-            {/* Special message when going from Blocked to Playing */}
-            {selectedSeat && selectedSeat.status === 'Blocked' && newStatus === 'Playing' && selectedSeat.playerId && (
+            {/* Special message when going from Blocked/Break to Playing */}
+            {selectedSeat && (selectedSeat.status === 'Blocked' || selectedSeat.status === 'Break') && 
+              newStatus === 'Playing' && selectedSeat.playerId && (
               <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded">
                 <p className="text-xs text-gray-500">
-                  Timer will restart when player returns to playing
+                  {selectedSeat.status === 'Break' 
+                    ? 'Timer will resume when player returns from break' 
+                    : 'Timer will restart when player returns to playing'}
                 </p>
               </div>
             )}
