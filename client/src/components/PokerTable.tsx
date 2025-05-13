@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import type { Seat, Player } from '@/../../shared/types';
 import { STATUS_COLORS } from '@/../../shared/types';
+import { timeTracker } from '../lib/timeTracker';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from './ui/select';
 import { Button } from './ui/button';
@@ -52,6 +53,7 @@ const PokerTable: React.FC = () => {
   const [players, setPlayers] = useState<Player[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [timeDisplay, setTimeDisplay] = useState<{[key: number]: string}>({});
   
   // Selected seat for status change dialog
   const [selectedSeat, setSelectedSeat] = useState<Seat | null>(null);
@@ -60,6 +62,7 @@ const PokerTable: React.FC = () => {
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | ''>('');
   const [newPlayerName, setNewPlayerName] = useState<string>('');
   const [showNewPlayerInput, setShowNewPlayerInput] = useState(false);
+  const [showPlayerTimes, setShowPlayerTimes] = useState(false);
   
   // Dealer position (bottom center)
   const dealerPosition = {
@@ -108,6 +111,14 @@ const PokerTable: React.FC = () => {
         ]);
         setSeats(seatsData);
         setPlayers(playersData);
+        
+        // Initialize time tracking for any players already in Playing status
+        seatsData.forEach(seat => {
+          if (seat.status === 'Playing' && seat.playerId) {
+            timeTracker.startTracking(seat.playerId);
+          }
+        });
+        
         setError(null);
       } catch (err) {
         setError('Failed to load data. Please try again.');
@@ -119,6 +130,31 @@ const PokerTable: React.FC = () => {
     
     loadData();
   }, []);
+  
+  // Update player times every second
+  useEffect(() => {
+    // Initial time update
+    const updateTimes = () => {
+      const times: {[key: number]: string} = {};
+      
+      // Get times for all active players
+      players.forEach(player => {
+        const timeStr = timeTracker.getFormattedTime(player.id);
+        times[player.id] = timeStr;
+      });
+      
+      setTimeDisplay(times);
+    };
+    
+    // Update times immediately
+    updateTimes();
+    
+    // Set up interval for updating times
+    const intervalId = setInterval(updateTimes, 1000);
+    
+    // Cleanup interval on unmount
+    return () => clearInterval(intervalId);
+  }, [players]);
   
   // Handle seat click to open status change dialog
   const handleSeatClick = (seat: Seat) => {
@@ -136,7 +172,7 @@ const PokerTable: React.FC = () => {
     return players.find(player => player.id === id);
   };
   
-  // Handle status change
+  // Handle status change with time tracking
   const handleStatusChange = async () => {
     if (!selectedSeat) return;
     
@@ -158,8 +194,25 @@ const PokerTable: React.FC = () => {
         }
       }
       
+      // Check for player status change for time tracking
+      const currentPlayer = selectedSeat.playerId;
+      
       // Update seat status
       const updatedSeat = await updateSeatStatus(selectedSeat.id, newStatus, playerId);
+      
+      // Handle time tracking based on status changes
+      if (currentPlayer && currentPlayer !== playerId) {
+        // Previous player is no longer in this seat, stop their timer
+        timeTracker.stopTracking(currentPlayer);
+      }
+      
+      if (newStatus === 'Playing' && playerId) {
+        // Start tracking time for the player
+        timeTracker.startTracking(playerId);
+      } else if (newStatus !== 'Playing' && currentPlayer) {
+        // If status changed from Playing to something else, stop timing
+        timeTracker.stopTracking(currentPlayer);
+      }
       
       // Update the seats state
       setSeats(prevSeats => 
@@ -278,6 +331,55 @@ const PokerTable: React.FC = () => {
                   <div className="w-4 h-4 rounded-full mr-2" style={{ backgroundColor: STATUS_COLORS.Closed }}></div>
                   <span>Closed</span>
                 </div>
+              </div>
+              
+              {/* Player Times Section */}
+              <div className="mt-8 border-t pt-4">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-semibold">Player Times</h3>
+                  <Button 
+                    variant="outline"
+                    onClick={() => setShowPlayerTimes(!showPlayerTimes)}
+                  >
+                    {showPlayerTimes ? 'Hide Times' : 'Show Times'}
+                  </Button>
+                </div>
+                
+                {showPlayerTimes && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {players.map(player => {
+                      // Get the seat this player is assigned to, if any
+                      const playerSeat = seats.find(seat => seat.playerId === player.id);
+                      const isActive = playerSeat?.status === 'Playing';
+                      
+                      return (
+                        <div 
+                          key={player.id} 
+                          className={`p-4 rounded-md border ${isActive ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}
+                        >
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <h4 className="font-medium">{player.name}</h4>
+                              <p className="text-sm text-gray-600">
+                                {playerSeat 
+                                  ? `Seat #${playerSeat.position} - ${playerSeat.status}` 
+                                  : 'Not seated'}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <span className={`text-lg font-mono ${isActive ? 'text-blue-600 font-bold' : 'text-gray-700'}`}>
+                                {timeDisplay[player.id] || '00:00:00'}
+                              </span>
+                              <p className="text-xs text-gray-500">
+                                {isActive ? 'Active' : 'Inactive'}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
           )}
