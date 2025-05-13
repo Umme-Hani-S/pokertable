@@ -158,17 +158,18 @@ const PokerTable: React.FC = () => {
   
   // Get available status options based on current status
   const getAvailableStatusOptions = (currentStatus: string): string[] => {
+    // Always include the current status first
     switch (currentStatus) {
       case 'Open':
-        return ['Playing', 'Blocked', 'Closed'];
+        return ['Open', 'Playing', 'Blocked', 'Closed'];
       case 'Playing':
-        return ['Break', 'Open', 'Closed'];
+        return ['Playing', 'Break', 'Open', 'Closed'];
       case 'Break':
-        return ['Playing', 'Open', 'Closed'];
+        return ['Break', 'Playing', 'Open', 'Closed'];
       case 'Blocked':
-        return ['Playing', 'Open', 'Closed']; // Updated to allow Blocked -> Playing
+        return ['Blocked', 'Playing', 'Open', 'Closed']; // Updated to allow Blocked -> Playing
       case 'Closed':
-        return ['Open'];
+        return ['Closed', 'Open'];
       default:
         return [];
     }
@@ -177,9 +178,8 @@ const PokerTable: React.FC = () => {
   // Handle seat click to open status change dialog
   const handleSeatClick = (seat: Seat) => {
     setSelectedSeat(seat);
-    // Default to first available option rather than current status
-    const availableOptions = getAvailableStatusOptions(seat.status);
-    setNewStatus(availableOptions.length > 0 ? availableOptions[0] : seat.status);
+    // Always set the current status as initial selection
+    setNewStatus(seat.status);
     setSelectedPlayerId(seat.playerId || '');
     setShowNewPlayerInput(false);
     setNewPlayerName('');
