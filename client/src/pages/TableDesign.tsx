@@ -14,33 +14,34 @@ const TableDesign: React.FC = () => {
   // 1. Seat 1 right next to dealer
   // 2. No seat overlapping dealer
   // 3. Seat 5 directly opposite dealer
+  // 4. All seats positioned exactly on the border of the table
   const seatPositions = [
     // Seat 1 - right next to dealer (bottom right)
-    { position: 1, left: 62, top: 87 },
+    { position: 1, left: 63, top: 83 },
     
     // Seat 2 - right side of table
-    { position: 2, left: 77, top: 70 },
+    { position: 2, left: 80, top: 65 },
     
     // Seat 3 - top right
-    { position: 3, left: 77, top: 30 },
+    { position: 3, left: 80, top: 35 },
     
     // Seat 4 - top right center
-    { position: 4, left: 65, top: 15 },
+    { position: 4, left: 65, top: 17 },
     
     // Seat 5 - directly opposite dealer (top middle)
-    { position: 5, left: 50, top: 10 },
+    { position: 5, left: 50, top: 13 },
     
     // Seat 6 - top left center
-    { position: 6, left: 35, top: 15 },
+    { position: 6, left: 35, top: 17 },
     
     // Seat 7 - top left
-    { position: 7, left: 23, top: 30 },
+    { position: 7, left: 20, top: 35 },
     
     // Seat 8 - left side of table
-    { position: 8, left: 23, top: 70 },
+    { position: 8, left: 20, top: 65 },
     
     // Seat 9 - left next to dealer (bottom left)
-    { position: 9, left: 38, top: 87 },
+    { position: 9, left: 37, top: 83 },
   ];
   
   return (
@@ -82,13 +83,13 @@ const TableDesign: React.FC = () => {
               {/* Dealer position */}
               {showSeats && (
                 <div 
-                  className="absolute w-12 h-12 rounded-full bg-white bg-opacity-90 border-2 border-red-500 shadow-md flex items-center justify-center transform -translate-x-1/2 -translate-y-1/2 z-20"
+                  className="absolute w-12 h-12 rounded-full bg-white border-2 border-red-600 shadow-lg flex items-center justify-center transform -translate-x-1/2 -translate-y-1/2 z-20"
                   style={{ 
                     left: `${dealerPosition.left}%`, 
                     top: `${dealerPosition.top}%`,
                   }}
                 >
-                  <span className="text-red-700 font-bold">D</span>
+                  <span className="text-red-700 font-bold text-lg">D</span>
                 </div>
               )}
               
@@ -98,7 +99,7 @@ const TableDesign: React.FC = () => {
                   {seatPositions.map((seat) => (
                     <div 
                       key={seat.position}
-                      className="absolute w-10 h-10 rounded-full bg-white bg-opacity-90 border-2 border-indigo-500 shadow-md flex items-center justify-center transform -translate-x-1/2 -translate-y-1/2 z-10"
+                      className="absolute w-10 h-10 rounded-full bg-white bg-opacity-90 border-2 border-indigo-600 shadow-lg flex items-center justify-center transform -translate-x-1/2 -translate-y-1/2 z-10"
                       style={{ 
                         left: `${seat.left}%`, 
                         top: `${seat.top}%`,
