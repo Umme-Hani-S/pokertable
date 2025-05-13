@@ -1,24 +1,41 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Stage, Layer, Circle, Text, Group } from 'react-konva';
+import { Stage, Layer, Ellipse, Rect, Text, Group } from 'react-konva';
 import { usePokerTable } from '@/context/PokerTableContext';
 import { formatTime } from '@/lib/timeUtils';
 import { User, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-// Define seat positions around the table (angle in radians)
-const getPositionFromAngle = (angle: number, radius: number, centerX: number, centerY: number) => {
-  return {
-    x: centerX + radius * Math.cos(angle),
-    y: centerY + radius * Math.sin(angle)
-  };
+// Define seat positions for oval table
+const calculateSeatPositions = (
+  numSeats: number, 
+  tableWidth: number, 
+  tableHeight: number, 
+  xOffset: number = 0, 
+  yOffset: number = 0
+) => {
+  const positions = [];
+  const centerX = tableWidth / 2 + xOffset;
+  const centerY = tableHeight / 2 + yOffset;
+  const radiusX = tableWidth * 0.43; // Horizontal radius
+  const radiusY = tableHeight * 0.68; // Vertical radius
+
+  for (let i = 0; i < numSeats; i++) {
+    // Start from top and go clockwise
+    const angle = (i * 2 * Math.PI / numSeats) - Math.PI / 2;
+    const x = centerX + radiusX * Math.cos(angle);
+    const y = centerY + radiusY * Math.sin(angle);
+    positions.push({ x, y });
+  }
+
+  return positions;
 };
 
 // Define poker table colors
 const tableColors = {
-  felt: '#1f7a4d', // Green felt
-  border: '#8B4513', // Brown wood border
-  padding: '#0f5d3a', // Darker green inner padding
-  dealer: '#333333', // Dealer button
+  felt: '#0F6B3B', // Green felt
+  border: '#1a1a1a', // Black border
+  padding: '#0A5A30', // Darker green inner padding
+  dealer: '#ffffff', // Dealer button
   active: '#4ade80', // Active player
   inactive: '#f87171', // Inactive player
   waiting: '#fbbf24', // Waiting player
@@ -39,16 +56,17 @@ const PokerTableVisualization: React.FC = () => {
 
   const stageRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [dimensions, setDimensions] = useState({ width: 500, height: 500 });
+  const [dimensions, setDimensions] = useState({ width: 800, height: 440 });
 
   // Function to handle window resize
   useEffect(() => {
     const updateDimensions = () => {
       if (containerRef.current) {
         const containerWidth = containerRef.current.offsetWidth;
-        const containerHeight = containerRef.current.offsetHeight;
-        const size = Math.min(containerWidth, containerHeight, 700) - 40;
-        setDimensions({ width: size, height: size });
+        let width = Math.min(containerWidth, 900);
+        let height = width * 0.55; // Maintain aspect ratio for oval table
+        
+        setDimensions({ width, height });
       }
     };
 
@@ -67,19 +85,22 @@ const PokerTableVisualization: React.FC = () => {
     }
   };
 
+  // Generate seat positions
+  const seatPositions = calculateSeatPositions(8, dimensions.width, dimensions.height);
+
   // Calculate table dimensions
   const tableWidth = dimensions.width;
   const tableHeight = dimensions.height;
   const centerX = tableWidth / 2;
   const centerY = tableHeight / 2;
-  const tableRadius = Math.min(centerX, centerY) * 0.9;
-  const innerRadius = tableRadius * 0.85;
-  const seatRadius = tableRadius * 0.15;
-  const seatOuterRadius = seatRadius * 1.2;
+  
+  // Seat sizing
+  const seatRadius = Math.min(tableWidth, tableHeight) * 0.06;
+  const seatOuterRadius = seatRadius * 1.15;
   
   return (
     <div className="flex-1 flex flex-col items-center justify-center p-4 overflow-auto relative" ref={containerRef}>
-      <div className="mb-4 flex justify-center w-full">
+      <div className="mb-6 flex justify-center w-full">
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md px-4 py-2 flex items-center">
           <span className="mr-2 font-medium">Table Status:</span>
           <span 
@@ -104,69 +125,68 @@ const PokerTableVisualization: React.FC = () => {
       
       <Stage width={tableWidth} height={tableHeight} ref={stageRef}>
         <Layer>
-          {/* Table border - wooden edge */}
-          <Circle
+          {/* Table - Using oval shape */}
+          <Ellipse
             x={centerX}
             y={centerY}
-            radius={tableRadius}
+            radiusX={tableWidth * 0.48}
+            radiusY={tableHeight * 0.75}
             fill={tableColors.border}
-            shadowBlur={15}
-            shadowColor="rgba(0,0,0,0.3)"
-            shadowOffset={{ x: 0, y: 5 }}
-            shadowOpacity={0.5}
+            shadowBlur={20}
+            shadowColor="rgba(0,0,0,0.4)"
+            shadowOffset={{ x: 0, y: 8 }}
+            shadowOpacity={0.6}
           />
           
           {/* Table felt */}
-          <Circle
+          <Ellipse
             x={centerX}
             y={centerY}
-            radius={innerRadius}
+            radiusX={tableWidth * 0.44}
+            radiusY={tableHeight * 0.65}
             fill={tableColors.felt}
-            shadowBlur={10}
-            shadowColor="rgba(0,0,0,0.2)"
-            shadowOffset={{ x: 0, y: 2 }}
-            shadowOpacity={0.3}
           />
           
-          {/* Table inner padding */}
-          <Circle
+          {/* Inner border/outline */}
+          <Ellipse
             x={centerX}
             y={centerY}
-            radius={innerRadius * 0.8}
-            fill={tableColors.padding}
+            radiusX={tableWidth * 0.40}
+            radiusY={tableHeight * 0.58}
+            stroke={tableColors.padding}
+            strokeWidth={1.5}
+            fill="transparent"
           />
           
-          {/* Table center label */}
-          <Group>
-            <Circle
-              x={centerX}
-              y={centerY}
-              radius={tableRadius * 0.2}
-              fill="rgba(0,0,0,0.2)"
+          {/* Card area */}
+          <Rect
+            x={centerX - 100}
+            y={centerY - 30}
+            width={200}
+            height={60}
+            fill={tableColors.padding}
+            opacity={0.3}
+            cornerRadius={5}
+          />
+          
+          {/* Card spots */}
+          {[0, 1, 2, 3, 4].map((i) => (
+            <Rect
+              key={`card-${i}`}
+              x={centerX - 85 + (i * 40)}
+              y={centerY - 20}
+              width={30}
+              height={40}
+              stroke={tableColors.padding}
+              strokeWidth={1}
+              cornerRadius={3}
+              fill="transparent"
             />
-            <Text
-              x={centerX - tableRadius * 0.18}
-              y={centerY - 10}
-              text="MAIN TABLE"
-              fontSize={tableRadius * 0.06}
-              fontFamily="'Montserrat', sans-serif"
-              fontStyle="bold"
-              fill="#ffffff"
-            />
-            <Text
-              x={centerX - tableRadius * 0.1}
-              y={centerY + 5}
-              text={formatTime(sessionTime)}
-              fontSize={tableRadius * 0.05}
-              fontFamily="monospace"
-              fill="#ffffff"
-            />
-          </Group>
+          ))}
           
           {/* Seats */}
           {!isLoadingSeats && seats.map((seat, index) => {
-            const angle = (index * Math.PI * 2) / 8 - Math.PI / 2; // Start from top, go clockwise
-            const position = getPositionFromAngle(angle, tableRadius * 0.75, centerX, centerY);
+            const position = seatPositions[index]; // Get pre-calculated positions for oval table
             const player = getPlayerBySeatId(seat.id);
             
             // Status colors
@@ -189,8 +209,9 @@ const PokerTableVisualization: React.FC = () => {
                 draggable={false}
               >
                 {/* Seat border */}
-                <Circle
-                  radius={seatOuterRadius}
+                <Ellipse
+                  radiusX={seatOuterRadius}
+                  radiusY={seatOuterRadius}
                   fill="#333333"
                   shadowBlur={10}
                   shadowColor="rgba(0,0,0,0.5)"
@@ -199,10 +220,11 @@ const PokerTableVisualization: React.FC = () => {
                 />
                 
                 {/* Seat background */}
-                <Circle
-                  radius={seatRadius}
+                <Ellipse
+                  radiusX={seatRadius}
+                  radiusY={seatRadius}
                   fill={fillColor}
-                  opacity={0.9}
+                  opacity={0.95}
                 />
                 
                 {/* Seat number */}
@@ -211,7 +233,7 @@ const PokerTableVisualization: React.FC = () => {
                   y={-seatRadius * 0.6}
                   text={seat.position.toString()}
                   fontSize={seatRadius * 0.5}
-                  fontFamily="sans-serif"
+                  fontFamily="'Montserrat', sans-serif"
                   fontStyle="bold"
                   fill="#ffffff"
                 />
@@ -222,12 +244,13 @@ const PokerTableVisualization: React.FC = () => {
                     <Text
                       x={-seatRadius * 0.8}
                       y={-seatRadius * 0.1}
-                      text={player.name.length > 10 ? player.name.substring(0, 8) + '...' : player.name}
+                      text={player.name.length > 8 ? player.name.substring(0, 6) + '...' : player.name}
                       fontSize={seatRadius * 0.4}
-                      fontFamily="sans-serif"
+                      fontFamily="'Inter', sans-serif"
                       width={seatRadius * 1.6}
                       align="center"
                       fill="#ffffff"
+                      fontStyle="bold"
                     />
                     <Text
                       x={-seatRadius * 0.8}
@@ -246,7 +269,7 @@ const PokerTableVisualization: React.FC = () => {
                     y={-seatRadius * 0.3}
                     text="+"
                     fontSize={seatRadius * 0.9}
-                    fontFamily="sans-serif"
+                    fontFamily="'Inter', sans-serif"
                     fontStyle="bold"
                     fill="#ffffff"
                   />
@@ -256,23 +279,69 @@ const PokerTableVisualization: React.FC = () => {
           })}
           
           {/* Dealer button */}
-          <Circle
-            x={centerX + innerRadius * 0.5}
-            y={centerY - innerRadius * 0.1}
-            radius={tableRadius * 0.05}
-            fill="#ffffff"
-            stroke="#000000"
-            strokeWidth={1}
-          />
-          <Text
-            x={centerX + innerRadius * 0.5 - tableRadius * 0.03}
-            y={centerY - innerRadius * 0.1 - tableRadius * 0.03}
-            text="D"
-            fontSize={tableRadius * 0.05}
-            fontFamily="sans-serif"
-            fontStyle="bold"
-            fill="#000000"
-          />
+          <Group x={centerX + tableWidth * 0.23} y={centerY - tableHeight * 0.05}>
+            <Ellipse
+              radiusX={seatRadius * 0.4}
+              radiusY={seatRadius * 0.4}
+              fill="#ffffff"
+              stroke="#000000"
+              strokeWidth={1}
+              shadowBlur={3}
+              shadowColor="rgba(0,0,0,0.3)"
+              shadowOffset={{ x: 0, y: 1 }}
+            />
+            <Text
+              x={-seatRadius * 0.15}
+              y={-seatRadius * 0.25}
+              text="D"
+              fontSize={seatRadius * 0.45}
+              fontFamily="'Montserrat', sans-serif"
+              fontStyle="bold"
+              fill="#000000"
+            />
+          </Group>
+          
+          {/* Table name overlay */}
+          <Group x={centerX} y={centerY - tableHeight * 0.35}>
+            <Rect
+              x={-tableWidth * 0.15}
+              y={-tableHeight * 0.03}
+              width={tableWidth * 0.30}
+              height={tableHeight * 0.06}
+              fill="rgba(0,0,0,0.7)"
+              cornerRadius={5}
+            />
+            <Text
+              x={-tableWidth * 0.13}
+              y={-tableHeight * 0.015}
+              text="MAIN TABLE"
+              fontSize={tableHeight * 0.03}
+              fontFamily="'Montserrat', sans-serif"
+              fontStyle="bold"
+              fill="#ffffff"
+            />
+          </Group>
+          
+          {/* Session timer overlay */}
+          <Group x={centerX} y={centerY + tableHeight * 0.35}>
+            <Rect
+              x={-tableWidth * 0.1}
+              y={-tableHeight * 0.025}
+              width={tableWidth * 0.2}
+              height={tableHeight * 0.05}
+              fill={sessionActive ? "rgba(22, 163, 74, 0.8)" : "rgba(245, 158, 11, 0.8)"}
+              cornerRadius={5}
+            />
+            <Text
+              x={-tableWidth * 0.08}
+              y={-tableHeight * 0.015}
+              text={formatTime(sessionTime)}
+              fontSize={tableHeight * 0.025}
+              fontFamily="monospace"
+              fontStyle="bold"
+              fill="#ffffff"
+            />
+          </Group>
         </Layer>
       </Stage>
 
