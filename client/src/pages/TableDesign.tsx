@@ -32,10 +32,10 @@ const TableDesign: React.FC = () => {
     { position: 1, left: 38, top: 87 },
     
     // Seat 2 - left side of table (moved further out)
-    { position: 2, left: 14, top: 65 },
+    { position: 2, left: 10, top: 65 },
     
     // Seat 3 - top left (moved further out)
-    { position: 3, left: 14, top: 35 },
+    { position: 3, left: 10, top: 35 },
     
     // Seat 4 - top left center
     { position: 4, left: 35, top: 15 },
@@ -47,10 +47,10 @@ const TableDesign: React.FC = () => {
     { position: 6, left: 65, top: 15 },
     
     // Seat 7 - top right (moved further out)
-    { position: 7, left: 86, top: 35 },
+    { position: 7, left: 90, top: 35 },
     
     // Seat 8 - right side of table (moved further out)
-    { position: 8, left: 86, top: 65 },
+    { position: 8, left: 90, top: 65 },
     
     // Seat 9 - right of dealer (bottom right)
     { position: 9, left: 62, top: 87 },
