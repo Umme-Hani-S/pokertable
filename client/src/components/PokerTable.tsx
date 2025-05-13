@@ -240,14 +240,14 @@ const PokerTable: React.FC = () => {
                           left: `${position.left}%`, 
                           top: `${position.top}%`,
                           borderColor: STATUS_COLORS[seat.status],
-                          backgroundColor: `${STATUS_COLORS[seat.status]}20`,
+                          backgroundColor: `${STATUS_COLORS[seat.status]}CC`, // CC is 80% opacity in hex
                         }}
                         onClick={() => handleSeatClick(seat)}
                       >
                         <div className="flex flex-col items-center justify-center">
-                          <span className="font-bold text-sm">{position.position}</span>
+                          <span className="font-bold text-sm text-white">{position.position}</span>
                           {seat.status === 'Playing' && player && (
-                            <span className="text-[8px] truncate max-w-[35px]">{player.name}</span>
+                            <span className="text-[8px] text-white font-semibold truncate max-w-[35px]">{player.name}</span>
                           )}
                         </div>
                       </div>
