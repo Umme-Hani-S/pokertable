@@ -156,10 +156,30 @@ const PokerTable: React.FC = () => {
     return () => clearInterval(intervalId);
   }, [players]);
   
+  // Get available status options based on current status
+  const getAvailableStatusOptions = (currentStatus: string): string[] => {
+    switch (currentStatus) {
+      case 'Open':
+        return ['Playing', 'Blocked', 'Closed'];
+      case 'Playing':
+        return ['Break', 'Open', 'Closed'];
+      case 'Break':
+        return ['Playing', 'Open', 'Closed'];
+      case 'Blocked':
+        return ['Open', 'Closed'];
+      case 'Closed':
+        return ['Open'];
+      default:
+        return [];
+    }
+  };
+
   // Handle seat click to open status change dialog
   const handleSeatClick = (seat: Seat) => {
     setSelectedSeat(seat);
-    setNewStatus(seat.status);
+    // Default to first available option rather than current status
+    const availableOptions = getAvailableStatusOptions(seat.status);
+    setNewStatus(availableOptions.length > 0 ? availableOptions[0] : seat.status);
     setSelectedPlayerId(seat.playerId || '');
     setShowNewPlayerInput(false);
     setNewPlayerName('');
@@ -404,16 +424,14 @@ const PokerTable: React.FC = () => {
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Open">Open</SelectItem>
-                  <SelectItem value="Playing">Playing</SelectItem>
-                  <SelectItem value="Break">Break</SelectItem>
-                  <SelectItem value="Blocked">Blocked</SelectItem>
-                  <SelectItem value="Closed">Closed</SelectItem>
+                  {selectedSeat && getAvailableStatusOptions(selectedSeat.status).map(status => (
+                    <SelectItem key={status} value={status}>{status}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
             
-            {/* Player selection for Playing status */}
+            {/* Player selection for Playing status only */}
             {newStatus === 'Playing' && (
               <div className="space-y-4">
                 <div className="flex items-center space-x-2">
@@ -457,6 +475,18 @@ const PokerTable: React.FC = () => {
                     </Select>
                   </div>
                 )}
+              </div>
+            )}
+            
+            {/* Display current player when status is Break */}
+            {newStatus === 'Break' && selectedSeat && selectedSeat.playerId && (
+              <div className="mt-2 p-3 bg-orange-50 border border-orange-200 rounded">
+                <p className="text-sm font-medium">
+                  Player on break: {getPlayerById(selectedSeat.playerId)?.name}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Time will pause while player is on break
+                </p>
               </div>
             )}
             
