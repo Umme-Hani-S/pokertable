@@ -166,7 +166,7 @@ const PokerTable: React.FC = () => {
       case 'Break':
         return ['Playing', 'Open', 'Closed'];
       case 'Blocked':
-        return ['Open', 'Closed'];
+        return ['Playing', 'Open', 'Closed']; // Updated to allow Blocked -> Playing
       case 'Closed':
         return ['Open'];
       default:
@@ -201,7 +201,10 @@ const PokerTable: React.FC = () => {
       
       // If status is 'Playing', we need a player ID
       if (newStatus === 'Playing') {
-        if (showNewPlayerInput && newPlayerName.trim()) {
+        // For blocked seats, we keep the same player when transitioning to Playing
+        if (selectedSeat.status === 'Blocked' && selectedSeat.playerId) {
+          playerId = selectedSeat.playerId;
+        } else if (showNewPlayerInput && newPlayerName.trim()) {
           // Create new player
           const newPlayer = await createPlayer(newPlayerName.trim());
           setPlayers(prevPlayers => [...prevPlayers, newPlayer]);
@@ -431,8 +434,8 @@ const PokerTable: React.FC = () => {
               </Select>
             </div>
             
-            {/* Player selection for Playing status only */}
-            {newStatus === 'Playing' && (
+            {/* Player selection for Playing status only - hide when coming from Blocked with existing player */}
+            {newStatus === 'Playing' && !(selectedSeat?.status === 'Blocked' && selectedSeat?.playerId) && (
               <div className="space-y-4">
                 <div className="flex items-center space-x-2">
                   <input 
@@ -487,6 +490,20 @@ const PokerTable: React.FC = () => {
                 <p className="text-xs text-gray-500 mt-1">
                   Time will pause while player is on break
                 </p>
+              </div>
+            )}
+            
+            {/* Display current player when transitioning from Blocked to anything else */}
+            {selectedSeat && selectedSeat.status === 'Blocked' && selectedSeat.playerId && (
+              <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded">
+                <p className="text-sm font-medium">
+                  Seat blocked by: {getPlayerById(selectedSeat.playerId)?.name}
+                </p>
+                {newStatus === 'Playing' && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Timer will restart when player returns to playing
+                  </p>
+                )}
               </div>
             )}
             
