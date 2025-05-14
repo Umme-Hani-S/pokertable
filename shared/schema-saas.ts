@@ -1,12 +1,10 @@
-import { pgTable, text, serial, integer, boolean, timestamp, pgEnum, varchar, foreignKey, uniqueIndex, date, index } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, pgEnum, varchar, foreignKey, uniqueIndex, date } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from 'drizzle-orm';
 
-// Role enum
+// Enums
 export const userRoleEnum = pgEnum('user_role', ['admin', 'club_owner', 'dealer']);
-
-// Status enum
 export const seatStatusEnum = pgEnum('seat_status', ['Open', 'Playing', 'Break', 'Blocked', 'Closed']);
 
 // User Model
@@ -49,15 +47,6 @@ export const clubs = pgTable("clubs", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
-// Club relations
-export const clubsRelations = relations(clubs, ({ one, many }) => ({
-  owner: one(users, {
-    fields: [clubs.ownerId],
-    references: [users.id]
-  }),
-  tables: many(tables)
-}));
-
 export const insertClubSchema = createInsertSchema(clubs).pick({
   name: true,
   ownerId: true,
@@ -80,20 +69,6 @@ export const tables = pgTable("tables", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
   maxSeats: integer("max_seats").notNull().default(9),
 });
-
-// Table relations
-export const tablesRelations = relations(tables, ({ one, many }) => ({
-  club: one(clubs, {
-    fields: [tables.clubId],
-    references: [clubs.id]
-  }),
-  dealer: one(users, {
-    fields: [tables.dealerId],
-    references: [users.id]
-  }),
-  seats: many(tableSeats),
-  sessions: many(tableSessions)
-}));
 
 export const insertTableSchema = createInsertSchema(tables).pick({
   name: true,
@@ -119,15 +94,6 @@ export const players = pgTable("players", {
   lastPlayed: timestamp("last_played"),
 });
 
-// Player relations
-export const playersRelations = relations(players, ({ one, many }) => ({
-  club: one(clubs, {
-    fields: [players.clubId],
-    references: [clubs.id]
-  }),
-  seatHistory: many(tableSeats)
-}));
-
 export const insertPlayerSchema = createInsertSchema(players).pick({
   name: true,
   clubId: true,
@@ -151,18 +117,6 @@ export const tableSessions = pgTable("table_sessions", {
   totalTime: integer("total_time").notNull().default(0), // In seconds
 });
 
-// Table Session relations
-export const tableSessionsRelations = relations(tableSessions, ({ one, many }) => ({
-  table: one(tables, {
-    fields: [tableSessions.tableId],
-    references: [tables.id]
-  }),
-  dealer: one(users, {
-    fields: [tableSessions.dealerId],
-    references: [users.id]
-  }),
-}));
-
 export const insertTableSessionSchema = createInsertSchema(tableSessions).pick({
   tableId: true,
   dealerId: true,
@@ -173,9 +127,6 @@ export const insertTableSessionSchema = createInsertSchema(tableSessions).pick({
 
 export type InsertTableSession = z.infer<typeof insertTableSessionSchema>;
 export type TableSession = typeof tableSessions.$inferSelect;
-
-// Status enum
-export const seatStatusEnum = pgEnum('seat_status', ['Open', 'Playing', 'Break', 'Blocked', 'Closed']);
 
 // Table Seat Model
 export const tableSeats = pgTable("table_seats", {
@@ -190,22 +141,6 @@ export const tableSeats = pgTable("table_seats", {
 }, (t) => ({
   // Ensure each table has unique seat positions
   tablePositionIdx: uniqueIndex('table_position_idx').on(t.tableId, t.position)
-}));
-
-// Table Seat relations
-export const tableSeatsRelations = relations(tableSeats, ({ one }) => ({
-  table: one(tables, {
-    fields: [tableSeats.tableId],
-    references: [tables.id]
-  }),
-  player: one(players, {
-    fields: [tableSeats.playerId],
-    references: [players.id]
-  }),
-  session: one(tableSessions, {
-    fields: [tableSeats.sessionId],
-    references: [tableSessions.id]
-  }),
 }));
 
 export const insertTableSeatSchema = createInsertSchema(tableSeats).pick({
@@ -231,7 +166,94 @@ export const playerTimeRecords = pgTable("player_time_records", {
   date: date("date").notNull().defaultNow(),
 });
 
-// PlayerTimeRecord relations
+export const insertPlayerTimeRecordSchema = createInsertSchema(playerTimeRecords).pick({
+  playerId: true,
+  seatId: true,
+  sessionId: true,
+  startTime: true,
+  endTime: true,
+  duration: true,
+});
+
+export type InsertPlayerTimeRecord = z.infer<typeof insertPlayerTimeRecordSchema>;
+export type PlayerTimeRecord = typeof playerTimeRecords.$inferSelect;
+
+// Relations
+export const usersRelations = relations(users, ({ many, one }) => ({
+  clubs: many(clubs, { relationName: 'ownerClubs' }),
+  dealers: many(users, { relationName: 'clubOwnerDealers' }),
+  clubOwner: one(users, {
+    fields: [users.clubOwnerId],
+    references: [users.id],
+    relationName: 'clubOwnerDealers'
+  }),
+  tables: many(tables, { relationName: 'dealerTables' }),
+  sessions: many(tableSessions, { relationName: 'dealerSessions' }),
+}));
+
+export const clubsRelations = relations(clubs, ({ one, many }) => ({
+  owner: one(users, {
+    fields: [clubs.ownerId],
+    references: [users.id],
+    relationName: 'ownerClubs'
+  }),
+  tables: many(tables),
+  players: many(players),
+}));
+
+export const tablesRelations = relations(tables, ({ one, many }) => ({
+  club: one(clubs, {
+    fields: [tables.clubId],
+    references: [clubs.id]
+  }),
+  dealer: one(users, {
+    fields: [tables.dealerId],
+    references: [users.id],
+    relationName: 'dealerTables'
+  }),
+  seats: many(tableSeats),
+  sessions: many(tableSessions),
+}));
+
+export const playersRelations = relations(players, ({ one, many }) => ({
+  club: one(clubs, {
+    fields: [players.clubId],
+    references: [clubs.id]
+  }),
+  seats: many(tableSeats),
+  timeRecords: many(playerTimeRecords),
+}));
+
+export const tableSessionsRelations = relations(tableSessions, ({ one, many }) => ({
+  table: one(tables, {
+    fields: [tableSessions.tableId],
+    references: [tables.id]
+  }),
+  dealer: one(users, {
+    fields: [tableSessions.dealerId],
+    references: [users.id],
+    relationName: 'dealerSessions'
+  }),
+  seats: many(tableSeats),
+  timeRecords: many(playerTimeRecords),
+}));
+
+export const tableSeatsRelations = relations(tableSeats, ({ one, many }) => ({
+  table: one(tables, {
+    fields: [tableSeats.tableId],
+    references: [tables.id]
+  }),
+  player: one(players, {
+    fields: [tableSeats.playerId],
+    references: [players.id]
+  }),
+  session: one(tableSessions, {
+    fields: [tableSeats.sessionId],
+    references: [tableSessions.id]
+  }),
+  timeRecords: many(playerTimeRecords),
+}));
+
 export const playerTimeRecordsRelations = relations(playerTimeRecords, ({ one }) => ({
   player: one(players, {
     fields: [playerTimeRecords.playerId],
@@ -246,15 +268,3 @@ export const playerTimeRecordsRelations = relations(playerTimeRecords, ({ one })
     references: [tableSessions.id]
   }),
 }));
-
-export const insertPlayerTimeRecordSchema = createInsertSchema(playerTimeRecords).pick({
-  playerId: true,
-  seatId: true,
-  sessionId: true,
-  startTime: true,
-  endTime: true,
-  duration: true,
-});
-
-export type InsertPlayerTimeRecord = z.infer<typeof insertPlayerTimeRecordSchema>;
-export type PlayerTimeRecord = typeof playerTimeRecords.$inferSelect;
