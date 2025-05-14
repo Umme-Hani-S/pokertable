@@ -13,6 +13,7 @@ import PokerTable from "./components/PokerTable";
 import AuthPage from "./pages/auth-page";
 import HomePage from "./pages/home-page";
 import ClubPlayerManagementPage from "./pages/club-player-management";
+import TableDesign from "./pages/TableDesign";
 
 // Import Admin Dashboard
 import AdminDashboard from "./pages/admin-dashboard";
