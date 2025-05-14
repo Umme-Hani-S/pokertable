@@ -62,6 +62,26 @@ function Router() {
         roles={["admin", "club_owner"]} 
       />
       <ProtectedRoute 
+        path="/clubs/tables" 
+        component={TablesList}
+        roles={["admin", "club_owner"]} 
+      />
+      <ProtectedRoute 
+        path="/clubs/tables/new" 
+        component={TableDesign}
+        roles={["admin", "club_owner"]} 
+      />
+      <ProtectedRoute 
+        path="/clubs/player-management" 
+        component={ClubPlayerManagementPage}
+        roles={["admin", "club_owner"]} 
+      />
+      <ProtectedRoute 
+        path="/clubs/queue" 
+        component={ClubPlayerManagementPage}
+        roles={["admin", "club_owner"]} 
+      />
+      <ProtectedRoute 
         path="/clubs/:id" 
         component={ClubDetail}
         roles={["admin", "club_owner", "dealer"]} 
