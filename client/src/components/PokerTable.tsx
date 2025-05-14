@@ -497,7 +497,7 @@ const PokerTable: React.FC = () => {
                     <AutocompleteSelect
                       items={players}
                       selectedId={selectedPlayerId}
-                      onSelect={(id) => setSelectedPlayerId(id)}
+                      onSelect={(id: number) => setSelectedPlayerId(id)}
                       placeholder="Type to search players..."
                     />
                   </div>
