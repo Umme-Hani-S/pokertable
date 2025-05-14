@@ -573,6 +573,116 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ======= CLUB USER MANAGEMENT ROUTES =======
+  
+  // Get users for a specific club
+  app.get("/api/clubs/:clubId/users", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const clubId = parseInt(req.params.clubId);
+      
+      // Get the club to check if user has access
+      const club = await storage.getClubById(clubId);
+      if (!club) {
+        return res.status(404).json({ error: "Club not found" });
+      }
+      
+      // Admin can see all users, club owners can see users in their clubs
+      if (req.user!.role !== "admin") {
+        if (req.user!.role === "club_owner" && club.ownerId !== req.user!.id) {
+          return res.status(403).json({ error: "Access denied" });
+        }
+        
+        if (req.user!.role === "dealer" && req.user!.clubOwnerId) {
+          const clubOwner = await storage.getUserById(req.user!.clubOwnerId);
+          if (!clubOwner || clubOwner.id !== club.ownerId) {
+            return res.status(403).json({ error: "Access denied" });
+          }
+        }
+      }
+      
+      // Get all users associated with this club
+      // - Club owner
+      // - Dealers with clubOwnerId set to the club owner
+      const clubUsers = [];
+      
+      // Add club owner
+      const clubOwner = await storage.getUserById(club.ownerId);
+      if (clubOwner) {
+        const { password, ...ownerWithoutPassword } = clubOwner;
+        clubUsers.push(ownerWithoutPassword);
+      }
+      
+      // Add dealers
+      const allUsers = await storage.getUsers();
+      const clubDealers = allUsers.filter(user => 
+        user.role === "dealer" && user.clubOwnerId === club.ownerId
+      );
+      
+      clubDealers.forEach(dealer => {
+        const { password, ...dealerWithoutPassword } = dealer;
+        clubUsers.push(dealerWithoutPassword);
+      });
+      
+      res.json(clubUsers);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+  
+  // Create a new user for a club
+  app.post("/api/clubs/:clubId/users", hasRole(["admin", "club_owner"]), async (req: Request, res: Response) => {
+    try {
+      const clubId = parseInt(req.params.clubId);
+      
+      // Get the club to check if user has access
+      const club = await storage.getClubById(clubId);
+      if (!club) {
+        return res.status(404).json({ error: "Club not found" });
+      }
+      
+      // Club owners can only add users to their own clubs
+      if (req.user!.role === "club_owner" && club.ownerId !== req.user!.id) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      const { username, email, password, fullName, role } = req.body;
+      
+      // Validate inputs
+      if (!username || !email || !password) {
+        return res.status(400).json({ error: "Username, email, and password are required" });
+      }
+      
+      // Check if username or email already exists
+      const existingUser = await storage.getUserByUsername(username);
+      if (existingUser) {
+        return res.status(400).json({ error: "Username already exists" });
+      }
+      
+      // Hash password
+      const hashedPassword = await hashPassword(password);
+      
+      // Create the user
+      const userData = {
+        username,
+        email,
+        password: hashedPassword,
+        fullName: fullName || "",
+        role: role || "dealer",
+        // If club owner is creating, set clubOwnerId to the club owner
+        clubOwnerId: req.user!.role === "club_owner" ? req.user!.id : club.ownerId
+      };
+      
+      const user = await storage.createUser(userData);
+      
+      // Remove password from response
+      const { password: _, ...userWithoutPassword } = user;
+      
+      res.status(201).json(userWithoutPassword);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
   // Create HTTP server
   const httpServer = createServer(app);
   return httpServer;

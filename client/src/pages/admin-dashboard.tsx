@@ -160,13 +160,37 @@ export default function AdminDashboard() {
                       <Loader2 className="h-8 w-8 animate-spin text-primary" />
                     </div>
                   ) : (
-                    <div className="text-center py-10">
-                      <h3 className="text-xl font-semibold mb-2">No Clubs Added Yet</h3>
-                      <p className="text-muted-foreground mb-4">Create your first club to get started</p>
-                      <Button onClick={handleCreateClub}>
-                        <Plus className="mr-2 h-4 w-4" /> Create Club
-                      </Button>
-                    </div>
+                    <>
+                      <div className="overflow-x-auto">
+                        <table className="w-full border-collapse">
+                          <thead>
+                            <tr className="border-b">
+                              <th className="py-3 px-4 text-left">Name</th>
+                              <th className="py-3 px-4 text-left">Owner</th>
+                              <th className="py-3 px-4 text-left">Address</th>
+                              <th className="py-3 px-4 text-left">Tables</th>
+                              <th className="py-3 px-4 text-right">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr className="border-b hover:bg-muted/50">
+                              <td className="py-3 px-4">Default Poker Club</td>
+                              <td className="py-3 px-4">Club Owner 1</td>
+                              <td className="py-3 px-4">123 Poker Street, Las Vegas</td>
+                              <td className="py-3 px-4">1</td>
+                              <td className="py-3 px-4 text-right space-x-2">
+                                <Button variant="outline" size="sm" onClick={() => handleManageClub(1)}>
+                                  Manage
+                                </Button>
+                                <Button variant="outline" size="sm" onClick={() => handleManageClubUsers(1)}>
+                                  Users
+                                </Button>
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </>
                   )}
                 </CardContent>
               </Card>
