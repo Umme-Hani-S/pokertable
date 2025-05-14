@@ -5,6 +5,7 @@ import { Toaster } from "./components/ui/toaster";
 import { queryClient } from "./lib/queryClient";
 import { AuthProvider } from "./hooks/use-auth";
 import { ProtectedRoute } from "./lib/protected-route";
+import { Navbar } from "./components/Navbar";
 
 // Pages
 import NotFound from "./pages/not-found";
@@ -112,7 +113,12 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider attribute="class" defaultTheme="light">
         <AuthProvider>
-          <Router />
+          <div className="min-h-screen flex flex-col">
+            <Navbar />
+            <div className="flex-1">
+              <Router />
+            </div>
+          </div>
           <Toaster />
         </AuthProvider>
       </ThemeProvider>
