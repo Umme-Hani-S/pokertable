@@ -55,6 +55,22 @@ export interface IStorage {
   createPlayerTimeRecord(data: schema.InsertPlayerTimeRecord): Promise<schema.PlayerTimeRecord>;
   updatePlayerTimeRecord(id: number, data: Partial<schema.InsertPlayerTimeRecord>): Promise<schema.PlayerTimeRecord | undefined>;
   
+  // Player Queue methods
+  getPlayerQueue(clubId: number): Promise<schema.PlayerQueue[]>;
+  getPlayerQueueByTableId(tableId: number): Promise<schema.PlayerQueue[]>;
+  addPlayerToQueue(data: schema.InsertPlayerQueue): Promise<schema.PlayerQueue>;
+  updatePlayerQueueEntry(id: number, data: Partial<schema.InsertPlayerQueue>): Promise<schema.PlayerQueue | undefined>;
+  removePlayerFromQueue(id: number): Promise<boolean>;
+  assignPlayerFromQueue(queueId: number, tableId: number): Promise<schema.PlayerQueue | undefined>;
+  
+  // Club Player Limits methods
+  getClubPlayerLimits(clubId: number): Promise<schema.ClubPlayerLimits | undefined>;
+  setClubPlayerLimits(data: schema.InsertClubPlayerLimits): Promise<schema.ClubPlayerLimits>;
+  updateClubPlayerLimits(clubId: number, data: Partial<schema.InsertClubPlayerLimits>): Promise<schema.ClubPlayerLimits | undefined>;
+  increaseCurrentPlayers(clubId: number): Promise<schema.ClubPlayerLimits | undefined>;
+  decreaseCurrentPlayers(clubId: number): Promise<schema.ClubPlayerLimits | undefined>;
+  checkPlayerLimit(clubId: number): Promise<{hasReachedLimit: boolean, currentCount: number, maxCount: number}>;
+  
   sessionStore: session.SessionStore;
 }
 
@@ -260,6 +276,168 @@ export class DatabaseStorage implements IStorage {
       .where(eq(schema.playerTimeRecords.id, id))
       .returning();
     return result[0];
+  }
+
+  // Player Queue methods
+  async getPlayerQueue(clubId: number): Promise<schema.PlayerQueue[]> {
+    return db.select()
+      .from(schema.playerQueue)
+      .where(eq(schema.playerQueue.clubId, clubId))
+      .orderBy(schema.playerQueue.priority, schema.playerQueue.joinedAt);
+  }
+
+  async getPlayerQueueByTableId(tableId: number): Promise<schema.PlayerQueue[]> {
+    return db.select()
+      .from(schema.playerQueue)
+      .where(eq(schema.playerQueue.tableId, tableId))
+      .orderBy(schema.playerQueue.priority, schema.playerQueue.joinedAt);
+  }
+
+  async addPlayerToQueue(data: schema.InsertPlayerQueue): Promise<schema.PlayerQueue> {
+    const result = await db.insert(schema.playerQueue).values(data).returning();
+    return result[0];
+  }
+
+  async updatePlayerQueueEntry(id: number, data: Partial<schema.InsertPlayerQueue>): Promise<schema.PlayerQueue | undefined> {
+    const result = await db.update(schema.playerQueue)
+      .set(data)
+      .where(eq(schema.playerQueue.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async removePlayerFromQueue(id: number): Promise<boolean> {
+    const result = await db.delete(schema.playerQueue)
+      .where(eq(schema.playerQueue.id, id))
+      .returning();
+    return result.length > 0;
+  }
+
+  async assignPlayerFromQueue(queueId: number, tableId: number): Promise<schema.PlayerQueue | undefined> {
+    const result = await db.update(schema.playerQueue)
+      .set({ 
+        tableId: tableId,
+        status: 'assigned',
+        assignedAt: new Date()
+      })
+      .where(eq(schema.playerQueue.id, queueId))
+      .returning();
+    return result[0];
+  }
+
+  // Club Player Limits methods
+  async getClubPlayerLimits(clubId: number): Promise<schema.ClubPlayerLimits | undefined> {
+    const result = await db.select()
+      .from(schema.clubPlayerLimits)
+      .where(eq(schema.clubPlayerLimits.clubId, clubId));
+    return result[0];
+  }
+
+  async setClubPlayerLimits(data: schema.InsertClubPlayerLimits): Promise<schema.ClubPlayerLimits> {
+    // Check if limits already exist for this club
+    const existingLimits = await this.getClubPlayerLimits(data.clubId);
+    
+    if (existingLimits) {
+      // Update existing limits
+      const result = await db.update(schema.clubPlayerLimits)
+        .set({
+          maxPlayers: data.maxPlayers,
+          updatedAt: new Date(),
+          updatedBy: data.updatedBy
+        })
+        .where(eq(schema.clubPlayerLimits.clubId, data.clubId))
+        .returning();
+      return result[0];
+    } else {
+      // Create new limits
+      const result = await db.insert(schema.clubPlayerLimits)
+        .values(data)
+        .returning();
+      return result[0];
+    }
+  }
+
+  async updateClubPlayerLimits(clubId: number, data: Partial<schema.InsertClubPlayerLimits>): Promise<schema.ClubPlayerLimits | undefined> {
+    const updatedData = {
+      ...data,
+      updatedAt: new Date()
+    };
+    
+    const result = await db.update(schema.clubPlayerLimits)
+      .set(updatedData)
+      .where(eq(schema.clubPlayerLimits.clubId, clubId))
+      .returning();
+    return result[0];
+  }
+
+  async increaseCurrentPlayers(clubId: number): Promise<schema.ClubPlayerLimits | undefined> {
+    // Get current limits
+    const limits = await this.getClubPlayerLimits(clubId);
+    
+    if (!limits) {
+      // Create default limits if they don't exist
+      return this.setClubPlayerLimits({
+        clubId,
+        maxPlayers: 50,
+        currentPlayers: 1
+      });
+    }
+    
+    // Increase by 1
+    const result = await db.update(schema.clubPlayerLimits)
+      .set({
+        currentPlayers: limits.currentPlayers + 1,
+        updatedAt: new Date()
+      })
+      .where(eq(schema.clubPlayerLimits.clubId, clubId))
+      .returning();
+    return result[0];
+  }
+
+  async decreaseCurrentPlayers(clubId: number): Promise<schema.ClubPlayerLimits | undefined> {
+    // Get current limits
+    const limits = await this.getClubPlayerLimits(clubId);
+    
+    if (!limits) {
+      return undefined;
+    }
+    
+    // Decrease by 1, but ensure we don't go below 0
+    const newCount = Math.max(0, limits.currentPlayers - 1);
+    
+    const result = await db.update(schema.clubPlayerLimits)
+      .set({
+        currentPlayers: newCount,
+        updatedAt: new Date()
+      })
+      .where(eq(schema.clubPlayerLimits.clubId, clubId))
+      .returning();
+    return result[0];
+  }
+
+  async checkPlayerLimit(clubId: number): Promise<{hasReachedLimit: boolean, currentCount: number, maxCount: number}> {
+    // Get current limits
+    const limits = await this.getClubPlayerLimits(clubId);
+    
+    if (!limits) {
+      // If no limits exist, create default ones and return not reached
+      await this.setClubPlayerLimits({
+        clubId,
+        maxPlayers: 50,
+        currentPlayers: 0
+      });
+      return {
+        hasReachedLimit: false,
+        currentCount: 0,
+        maxCount: 50
+      };
+    }
+    
+    return {
+      hasReachedLimit: limits.currentPlayers >= limits.maxPlayers,
+      currentCount: limits.currentPlayers,
+      maxCount: limits.maxPlayers
+    };
   }
 }
 

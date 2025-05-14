@@ -244,6 +244,11 @@ export const clubsRelations = relations(clubs, ({ one, many }) => ({
   }),
   tables: many(tables),
   players: many(players),
+  playerQueue: many(playerQueue),
+  playerLimits: one(clubPlayerLimits, {
+    fields: [clubs.id],
+    references: [clubPlayerLimits.clubId]
+  }),
 }));
 
 export const tablesRelations = relations(tables, ({ one, many }) => ({
@@ -258,6 +263,7 @@ export const tablesRelations = relations(tables, ({ one, many }) => ({
   }),
   seats: many(tableSeats),
   sessions: many(tableSessions),
+  queue: many(playerQueue),
 }));
 
 export const playersRelations = relations(players, ({ one, many }) => ({
@@ -267,6 +273,7 @@ export const playersRelations = relations(players, ({ one, many }) => ({
   }),
   seats: many(tableSeats),
   timeRecords: many(playerTimeRecords),
+  queueEntries: many(playerQueue),
 }));
 
 export const tableSessionsRelations = relations(tableSessions, ({ one, many }) => ({
@@ -311,5 +318,31 @@ export const playerTimeRecordsRelations = relations(playerTimeRecords, ({ one })
   session: one(tableSessions, {
     fields: [playerTimeRecords.sessionId],
     references: [tableSessions.id]
+  }),
+}));
+
+export const playerQueueRelations = relations(playerQueue, ({ one }) => ({
+  player: one(players, {
+    fields: [playerQueue.playerId],
+    references: [players.id]
+  }),
+  club: one(clubs, {
+    fields: [playerQueue.clubId],
+    references: [clubs.id]
+  }),
+  table: one(tables, {
+    fields: [playerQueue.tableId],
+    references: [tables.id]
+  }),
+}));
+
+export const clubPlayerLimitsRelations = relations(clubPlayerLimits, ({ one }) => ({
+  club: one(clubs, {
+    fields: [clubPlayerLimits.clubId],
+    references: [clubs.id]
+  }),
+  updatedByUser: one(users, {
+    fields: [clubPlayerLimits.updatedBy],
+    references: [users.id]
   }),
 }));
