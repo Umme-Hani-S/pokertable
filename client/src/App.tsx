@@ -20,8 +20,8 @@ import AdminDashboard from "./pages/admin-dashboard";
 const ClubsList = () => <div>Clubs Management (Coming Soon)</div>;
 const UsersList = () => <div>Users Management (Coming Soon)</div>;
 
-// Club Owner Dashboard components to be created
-const ClubOwnerDashboard = () => <div>Club Owner Dashboard (Coming Soon)</div>;
+// Import Club Owner Dashboard components
+import ClubOwnerDashboard from "./pages/club-owner-dashboard";
 const ClubDetail = () => <div>Club Detail (Coming Soon)</div>;
 const TablesList = () => <div>Tables Management (Coming Soon)</div>;
 const PlayersList = () => <div>Players Management (Coming Soon)</div>;
