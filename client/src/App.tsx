@@ -75,6 +75,11 @@ function Router() {
         component={PlayersList}
         roles={["admin", "club_owner", "dealer"]} 
       />
+      <ProtectedRoute 
+        path="/clubs/:clubId/player-management" 
+        component={ClubPlayerManagementPage}
+        roles={["admin", "club_owner", "dealer"]} 
+      />
       
       {/* Dealer Routes */}
       <ProtectedRoute 

@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { PlayerQueue } from '@/components/PlayerQueue';
 import { AddToQueueForm } from '@/components/AddToQueueForm';
 import { ClubPlayerLimits } from '@/components/ClubPlayerLimits';
+import { ClubHeader } from '@/components/ClubHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -119,16 +120,12 @@ export default function ClubPlayerManagementPage() {
 
   return (
     <div className="container mx-auto py-8">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">{club.name}</h1>
-          <p className="text-muted-foreground">Player Management Dashboard</p>
-        </div>
-        <Button variant="outline" onClick={() => setLocation(`/clubs/${clubId}`)}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Club
-        </Button>
-      </div>
+      <ClubHeader 
+        clubId={club.id} 
+        clubName={club.name} 
+        clubAddress={club.address} 
+        activeTab="player-management" 
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         <div className="lg:col-span-2">
