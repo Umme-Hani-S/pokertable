@@ -1,10 +1,18 @@
 import { Express, Request, Response, NextFunction } from "express";
 import { Server, createServer } from "http";
 import { setupAuth, isAuthenticated, hasRole, hasClubAccess } from "./auth";
-import { storage } from "./storage-db";
+import { storage } from "./storage";
 import { z } from "zod";
-import { insertUserSchema, insertClubSchema, insertTableSchema, insertPlayerSchema } from "@/../../shared/schema-saas";
-import { SeatStatus } from "@/../../shared/types";
+import { insertUserSchema, insertClubSchema, insertTableSchema, insertPlayerSchema } from "../shared/schema";
+
+// Define seat status enum directly here to avoid import issues
+const SeatStatus = {
+  Open: 'Open',
+  Playing: 'Playing',
+  Break: 'Break',
+  Blocked: 'Blocked',
+  Closed: 'Closed'
+} as const;
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Sets up authentication routes

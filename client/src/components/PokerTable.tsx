@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import type { Seat, Player } from '@/../../shared/types';
+import type { Seat, Player, SeatStatus } from '@/../../shared/types';
 import { STATUS_COLORS } from '@/../../shared/types';
 import { timeTracker } from '../lib/timeTracker';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
@@ -347,8 +347,8 @@ const PokerTable: React.FC = () => {
                         style={{ 
                           left: `${position.left}%`, 
                           top: `${position.top}%`,
-                          borderColor: STATUS_COLORS[seat.status],
-                          backgroundColor: `${STATUS_COLORS[seat.status]}CC`, // CC is 80% opacity in hex
+                          borderColor: STATUS_COLORS[seat.status as SeatStatus],
+                          backgroundColor: `${STATUS_COLORS[seat.status as SeatStatus]}CC`, // CC is 80% opacity in hex
                         }}
                         onClick={() => handleSeatClick(seat)}
                       >

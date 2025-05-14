@@ -4,6 +4,18 @@ export type UserRole = 'admin' | 'club_owner' | 'dealer';
 // Seat Statuses
 export type SeatStatus = 'Open' | 'Playing' | 'Break' | 'Blocked' | 'Closed';
 
+// For backwards compatibility with the existing PokerTable component
+export interface Seat {
+  id: number;
+  position: number;
+  status: SeatStatus;
+  playerId?: number;
+  tableId?: number;
+  sessionId?: number;
+  timeStarted?: Date;
+  timeElapsed?: number;
+}
+
 // User interfaces
 export interface User {
   id: number;
