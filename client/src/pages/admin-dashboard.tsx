@@ -519,8 +519,199 @@ export default function AdminDashboard() {
           </Tabs>
         </div>
       </main>
-    
-      {/* Club and User dialogs would normally be rendered here */}
+      {/* Club Creation Dialog */}
+      {isClubDialogOpen && (
+        <Dialog open={isClubDialogOpen} onOpenChange={setIsClubDialogOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Create New Club</DialogTitle>
+              <DialogDescription>
+                Add a new poker club to the system.
+              </DialogDescription>
+            </DialogHeader>
+            <Form {...clubForm}>
+              <form onSubmit={clubForm.handleSubmit(onSubmitClub)} className="space-y-4">
+                <FormField
+                  control={clubForm.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Club Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter club name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={clubForm.control}
+                  name="address"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Address</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter club address" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={clubForm.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Phone Number</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter phone number (optional)" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={clubForm.control}
+                  name="licenseLevel"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>License Level</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a license level" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="basic">Basic (1 table)</SelectItem>
+                          <SelectItem value="standard">Standard (3 tables)</SelectItem>
+                          <SelectItem value="premium">Premium (Unlimited tables)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <DialogFooter>
+                  <Button type="submit" disabled={createClubMutation.isPending}>
+                    {createClubMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Creating...
+                      </>
+                    ) : (
+                      "Create Club"
+                    )}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
+      )}
+      
+      {/* User Creation Dialog */}
+      {isUserDialogOpen && (
+        <Dialog open={isUserDialogOpen} onOpenChange={setIsUserDialogOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Create New User</DialogTitle>
+              <DialogDescription>
+                Add a new user to the club.
+              </DialogDescription>
+            </DialogHeader>
+            <Form {...userForm}>
+              <form onSubmit={userForm.handleSubmit(onSubmitUser)} className="space-y-4">
+                <FormField
+                  control={userForm.control}
+                  name="username"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Username</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter username" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={userForm.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input type="email" placeholder="Enter email address" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={userForm.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Password</FormLabel>
+                      <FormControl>
+                        <Input type="password" placeholder="Enter password" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={userForm.control}
+                  name="fullName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Full Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter full name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={userForm.control}
+                  name="role"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Role</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a role" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="dealer">Dealer</SelectItem>
+                          <SelectItem value="club_owner">Club Owner</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <DialogFooter>
+                  <Button type="submit" disabled={createUserMutation.isPending}>
+                    {createUserMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Creating...
+                      </>
+                    ) : (
+                      "Create User"
+                    )}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
