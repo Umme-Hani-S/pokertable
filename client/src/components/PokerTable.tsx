@@ -7,6 +7,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '.
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
+import PlayerSearchSelect from './PlayerSearchSelect';
 import pokerTableImg from '../assets/poker-table.jpg';
 
 // API functions
@@ -493,21 +494,12 @@ const PokerTable: React.FC = () => {
                 ) : (
                   <div className="space-y-2">
                     <Label htmlFor="playerId">Select Player</Label>
-                    <Select 
-                      value={selectedPlayerId ? String(selectedPlayerId) : ''} 
-                      onValueChange={val => setSelectedPlayerId(val ? Number(val) : '')}
-                    >
-                      <SelectTrigger id="playerId">
-                        <SelectValue placeholder="Select player" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {players.map(player => (
-                          <SelectItem key={player.id} value={String(player.id)}>
-                            {player.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <PlayerSearchSelect
+                      players={players}
+                      selectedPlayerId={selectedPlayerId}
+                      onSelect={(id) => setSelectedPlayerId(id)}
+                      placeholder="Search for player..."
+                    />
                   </div>
                 )}
               </div>
