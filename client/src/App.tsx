@@ -27,7 +27,8 @@ const TablesList = () => <div>Tables Management (Coming Soon)</div>;
 const PlayersList = () => <div>Players Management (Coming Soon)</div>;
 
 // Dealer pages
-const DealerDashboard = () => <div>Dealer Dashboard (Coming Soon)</div>;
+import PokerTable from "./pages/PokerTable";
+const DealerDashboard = () => <PokerTable />;
 const TableDetail = () => <div>Table Detail (Coming Soon)</div>;
 const SessionDetail = () => <div>Session Detail (Coming Soon)</div>;
 
