@@ -9,7 +9,8 @@ import { Navbar } from "./components/Navbar";
 
 // Pages
 import NotFound from "./pages/not-found";
-import PokerTable from "./components/PokerTable";
+import PokerTableComponent from "./components/PokerTable";
+import PokerTablePage from "./pages/PokerTable";
 import AuthPage from "./pages/auth-page";
 import HomePage from "./pages/home-page";
 import ClubPlayerManagementPage from "./pages/club-player-management";
@@ -27,7 +28,7 @@ const TablesList = () => <div>Tables Management (Coming Soon)</div>;
 const PlayersList = () => <div>Players Management (Coming Soon)</div>;
 
 // Dealer pages
-const DealerDashboard = () => <PokerTable />;
+const DealerDashboard = () => <PokerTablePage />;
 const TableDetail = () => <div>Table Detail (Coming Soon)</div>;
 const SessionDetail = () => <div>Session Detail (Coming Soon)</div>;
 
@@ -105,6 +106,11 @@ function Router() {
       
       {/* Dealer Routes */}
       <ProtectedRoute 
+        path="/poker-table" 
+        component={DealerDashboard}
+        roles={["admin", "club_owner", "dealer"]} 
+      />
+      <ProtectedRoute 
         path="/table-design" 
         component={TableDesign}
         roles={["admin", "club_owner", "dealer"]} 
@@ -116,7 +122,7 @@ function Router() {
       />
       <ProtectedRoute 
         path="/tables/:id/poker" 
-        component={PokerTable}
+        component={DealerDashboard}
         roles={["admin", "club_owner", "dealer"]} 
       />
       <ProtectedRoute 

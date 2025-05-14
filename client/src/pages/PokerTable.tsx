@@ -1,42 +1,17 @@
 import React from 'react';
-import Header from '@/components/Header';
-import PokerTableVisualization from '@/components/PokerTableVisualization';
-import PlayerManagementPanel from '@/components/PlayerManagementPanel';
-import PlayerActionDialog from '@/components/PlayerActionDialog';
-import { usePokerTable } from '@/context/PokerTableContext';
+import PokerTableComponent from '@/components/PokerTable';
 import { Helmet } from 'react-helmet';
 
-const PokerTable: React.FC = () => {
-  const { 
-    showPlayerDialog,
-    setShowPlayerDialog,
-    selectedPlayer 
-  } = usePokerTable();
-
+const PokerTablePage: React.FC = () => {
   return (
     <>
       <Helmet>
-        <title>Poker Table Timer - Dealer Interface</title>
-        <meta name="description" content="A poker table management tool for tracking player time and seat assignments" />
+        <title>Poker Table Management</title>
+        <meta name="description" content="Manage poker tables, track player time, and handle seat assignments" />
       </Helmet>
-      
-      <div className="flex flex-col h-screen">
-        <Header />
-        
-        <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
-          <PokerTableVisualization />
-          <PlayerManagementPanel />
-        </div>
-        
-        {showPlayerDialog && selectedPlayer && (
-          <PlayerActionDialog
-            player={selectedPlayer}
-            onClose={() => setShowPlayerDialog(false)}
-          />
-        )}
-      </div>
+      <PokerTableComponent />
     </>
   );
 };
 
-export default PokerTable;
+export default PokerTablePage;
