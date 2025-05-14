@@ -111,7 +111,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get clubs for logged in user (club owner or dealer)
   app.get("/api/my-clubs", isAuthenticated, async (req: Request, res: Response) => {
     try {
-      let clubs = [];
+      let clubs: any[] = [];
       
       if (req.user!.role === "admin") {
         clubs = await storage.getClubs();

@@ -519,6 +519,8 @@ export default function AdminDashboard() {
           </Tabs>
         </div>
       </main>
+    
+      {/* Club and User dialogs would normally be rendered here */}
     </div>
   );
 }
