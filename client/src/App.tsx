@@ -10,9 +10,10 @@ import { ProtectedRoute } from "./lib/protected-route";
 import NotFound from "./pages/not-found";
 import PokerTable from "./components/PokerTable";
 import AuthPage from "./pages/auth-page";
+import HomePage from "./pages/home-page";
 
-// Admin Dashboard components to be created
-const AdminDashboard = () => <div>Admin Dashboard (Coming Soon)</div>;
+// Import Admin Dashboard
+import AdminDashboard from "./pages/admin-dashboard";
 const ClubsList = () => <div>Clubs Management (Coming Soon)</div>;
 const UsersList = () => <div>Users Management (Coming Soon)</div>;
 
@@ -91,8 +92,8 @@ function Router() {
         roles={["admin", "club_owner", "dealer"]} 
       />
       
-      {/* Home route based on role */}
-      <ProtectedRoute path="/" component={DealerDashboard} />
+      {/* Home route that redirects based on role */}
+      <ProtectedRoute path="/" component={HomePage} />
       
       {/* 404 Route */}
       <Route component={NotFound} />
