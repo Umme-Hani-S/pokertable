@@ -3,7 +3,14 @@ import { Server, createServer } from "http";
 import { setupAuth, isAuthenticated, hasRole, hasClubAccess, hashPassword } from "./auth";
 import { storage } from "./storage";
 import { z } from "zod";
-import { insertUserSchema, insertClubSchema, insertTableSchema, insertPlayerSchema } from "../shared/schema";
+import { 
+  insertUserSchema, 
+  insertClubSchema, 
+  insertTableSchema, 
+  insertPlayerSchema,
+  insertPlayerQueueSchema,
+  insertClubPlayerLimitsSchema
+} from "../shared/schema";
 
 // Define seat status enum directly here to avoid import issues
 const SeatStatus = {
@@ -678,6 +685,463 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { password: _, ...userWithoutPassword } = user;
       
       res.status(201).json(userWithoutPassword);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  // ======= PLAYER QUEUE ROUTES =======
+  
+  // Get the player queue for a club
+  app.get("/api/clubs/:clubId/queue", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const clubId = parseInt(req.params.clubId);
+      const club = await storage.getClubById(clubId);
+      
+      if (!club) {
+        return res.status(404).json({ error: "Club not found" });
+      }
+      
+      // Check if user has access to this club
+      if (req.user!.role !== "admin") {
+        if (req.user!.role === "club_owner" && club.ownerId !== req.user!.id) {
+          return res.status(403).json({ error: "Access denied" });
+        }
+        
+        if (req.user!.role === "dealer" && req.user!.clubOwnerId) {
+          const clubOwner = await storage.getUserById(req.user!.clubOwnerId);
+          if (!clubOwner || clubOwner.id !== club.ownerId) {
+            return res.status(403).json({ error: "Access denied" });
+          }
+        }
+      }
+      
+      const queue = await storage.getPlayerQueue(clubId);
+      
+      // Get player details for each queue entry
+      const queueWithPlayerDetails = await Promise.all(queue.map(async (entry) => {
+        const player = await storage.getPlayer(entry.playerId);
+        return {
+          ...entry,
+          player
+        };
+      }));
+      
+      res.json(queueWithPlayerDetails);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  // Get the player queue for a specific table
+  app.get("/api/tables/:tableId/queue", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const tableId = parseInt(req.params.tableId);
+      const table = await storage.getTableById(tableId);
+      
+      if (!table) {
+        return res.status(404).json({ error: "Table not found" });
+      }
+      
+      const club = await storage.getClubById(table.clubId);
+      
+      // Check if user has access to this club
+      if (req.user!.role !== "admin") {
+        if (req.user!.role === "club_owner" && club.ownerId !== req.user!.id) {
+          return res.status(403).json({ error: "Access denied" });
+        }
+        
+        if (req.user!.role === "dealer" && req.user!.clubOwnerId) {
+          const clubOwner = await storage.getUserById(req.user!.clubOwnerId);
+          if (!clubOwner || clubOwner.id !== club.ownerId) {
+            return res.status(403).json({ error: "Access denied" });
+          }
+        }
+      }
+      
+      const queue = await storage.getPlayerQueueByTableId(tableId);
+      
+      // Get player details for each queue entry
+      const queueWithPlayerDetails = await Promise.all(queue.map(async (entry) => {
+        const player = await storage.getPlayer(entry.playerId);
+        return {
+          ...entry,
+          player
+        };
+      }));
+      
+      res.json(queueWithPlayerDetails);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  // Add a player to the queue
+  app.post("/api/clubs/:clubId/queue", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const clubId = parseInt(req.params.clubId);
+      const club = await storage.getClubById(clubId);
+      
+      if (!club) {
+        return res.status(404).json({ error: "Club not found" });
+      }
+      
+      // Check if user has access to this club
+      if (req.user!.role !== "admin") {
+        if (req.user!.role === "club_owner" && club.ownerId !== req.user!.id) {
+          return res.status(403).json({ error: "Access denied" });
+        }
+        
+        if (req.user!.role === "dealer" && req.user!.clubOwnerId) {
+          const clubOwner = await storage.getUserById(req.user!.clubOwnerId);
+          if (!clubOwner || clubOwner.id !== club.ownerId) {
+            return res.status(403).json({ error: "Access denied" });
+          }
+        }
+      }
+      
+      // Validate request body
+      const validatedData = insertPlayerQueueSchema.parse({
+        ...req.body,
+        clubId,
+      });
+      
+      // Check if player exists
+      const player = await storage.getPlayer(validatedData.playerId);
+      if (!player) {
+        return res.status(404).json({ error: "Player not found" });
+      }
+
+      // Check if player is already in the queue
+      const existingQueue = await storage.getPlayerQueue(clubId);
+      const playerAlreadyQueued = existingQueue.some(entry => 
+        entry.playerId === validatedData.playerId && entry.status === 'waiting'
+      );
+      
+      if (playerAlreadyQueued) {
+        return res.status(400).json({ error: "Player is already in the queue" });
+      }
+      
+      // Check player limits before adding to queue
+      const playerLimits = await storage.checkPlayerLimit(clubId);
+      if (playerLimits.hasReachedLimit) {
+        return res.status(400).json({ 
+          error: "Club has reached its player limit", 
+          currentCount: playerLimits.currentCount,
+          maxCount: playerLimits.maxCount
+        });
+      }
+      
+      // If tableId is provided, check if table exists
+      if (validatedData.tableId) {
+        const table = await storage.getTableById(validatedData.tableId);
+        if (!table) {
+          return res.status(404).json({ error: "Table not found" });
+        }
+        
+        // Ensure table belongs to the club
+        if (table.clubId !== clubId) {
+          return res.status(400).json({ error: "Table does not belong to the club" });
+        }
+      }
+      
+      const queueEntry = await storage.addPlayerToQueue(validatedData);
+      
+      // Increase current player count
+      await storage.increaseCurrentPlayers(clubId);
+      
+      // Get player details
+      const playerDetails = await storage.getPlayer(queueEntry.playerId);
+      
+      res.status(201).json({
+        ...queueEntry,
+        player: playerDetails,
+      });
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  // Update a queue entry
+  app.put("/api/queue/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const queueId = parseInt(req.params.id);
+      const queue = await storage.getPlayerQueue(0); // Get all queue entries
+      const queueEntry = queue.find(entry => entry.id === queueId);
+      
+      if (!queueEntry) {
+        return res.status(404).json({ error: "Queue entry not found" });
+      }
+      
+      const club = await storage.getClubById(queueEntry.clubId);
+      
+      // Check if user has access to this club
+      if (req.user!.role !== "admin") {
+        if (req.user!.role === "club_owner" && club.ownerId !== req.user!.id) {
+          return res.status(403).json({ error: "Access denied" });
+        }
+        
+        if (req.user!.role === "dealer" && req.user!.clubOwnerId) {
+          const clubOwner = await storage.getUserById(req.user!.clubOwnerId);
+          if (!clubOwner || clubOwner.id !== club.ownerId) {
+            return res.status(403).json({ error: "Access denied" });
+          }
+        }
+      }
+      
+      // Do not allow changing clubId or playerId
+      const allowedUpdates = { 
+        ...req.body,
+        clubId: undefined,
+        playerId: undefined
+      };
+      
+      // If tableId is provided, check if table exists
+      if (allowedUpdates.tableId) {
+        const table = await storage.getTableById(allowedUpdates.tableId);
+        if (!table) {
+          return res.status(404).json({ error: "Table not found" });
+        }
+        
+        // Ensure table belongs to the club
+        if (table.clubId !== queueEntry.clubId) {
+          return res.status(400).json({ error: "Table does not belong to the club" });
+        }
+      }
+      
+      const updatedQueueEntry = await storage.updatePlayerQueueEntry(queueId, allowedUpdates);
+      
+      // Get player details
+      const playerDetails = await storage.getPlayer(updatedQueueEntry!.playerId);
+      
+      res.json({
+        ...updatedQueueEntry,
+        player: playerDetails,
+      });
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  // Remove player from queue
+  app.delete("/api/queue/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const queueId = parseInt(req.params.id);
+      const queue = await storage.getPlayerQueue(0); // Get all queue entries
+      const queueEntry = queue.find(entry => entry.id === queueId);
+      
+      if (!queueEntry) {
+        return res.status(404).json({ error: "Queue entry not found" });
+      }
+      
+      const club = await storage.getClubById(queueEntry.clubId);
+      
+      // Check if user has access to this club
+      if (req.user!.role !== "admin") {
+        if (req.user!.role === "club_owner" && club.ownerId !== req.user!.id) {
+          return res.status(403).json({ error: "Access denied" });
+        }
+        
+        if (req.user!.role === "dealer" && req.user!.clubOwnerId) {
+          const clubOwner = await storage.getUserById(req.user!.clubOwnerId);
+          if (!clubOwner || clubOwner.id !== club.ownerId) {
+            return res.status(403).json({ error: "Access denied" });
+          }
+        }
+      }
+      
+      await storage.removePlayerFromQueue(queueId);
+      
+      // Decrease current player count
+      await storage.decreaseCurrentPlayers(queueEntry.clubId);
+      
+      res.status(200).json({ success: true });
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  // Assign a player from queue to a table
+  app.post("/api/queue/:id/assign/:tableId", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const queueId = parseInt(req.params.id);
+      const tableId = parseInt(req.params.tableId);
+      
+      const queue = await storage.getPlayerQueue(0); // Get all queue entries
+      const queueEntry = queue.find(entry => entry.id === queueId);
+      
+      if (!queueEntry) {
+        return res.status(404).json({ error: "Queue entry not found" });
+      }
+      
+      const table = await storage.getTableById(tableId);
+      if (!table) {
+        return res.status(404).json({ error: "Table not found" });
+      }
+      
+      const club = await storage.getClubById(queueEntry.clubId);
+      
+      // Check if user has access to this club
+      if (req.user!.role !== "admin") {
+        if (req.user!.role === "club_owner" && club.ownerId !== req.user!.id) {
+          return res.status(403).json({ error: "Access denied" });
+        }
+        
+        if (req.user!.role === "dealer" && req.user!.clubOwnerId) {
+          const clubOwner = await storage.getUserById(req.user!.clubOwnerId);
+          if (!clubOwner || clubOwner.id !== club.ownerId) {
+            return res.status(403).json({ error: "Access denied" });
+          }
+        }
+      }
+      
+      // Ensure table belongs to the club
+      if (table.clubId !== queueEntry.clubId) {
+        return res.status(400).json({ error: "Table does not belong to the club" });
+      }
+      
+      // Assign player to table in queue
+      const updatedQueueEntry = await storage.assignPlayerFromQueue(queueId, tableId);
+      
+      // Get player details
+      const playerDetails = await storage.getPlayer(updatedQueueEntry!.playerId);
+      
+      res.json({
+        ...updatedQueueEntry,
+        player: playerDetails,
+      });
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  // ======= CLUB PLAYER LIMITS ROUTES =======
+  
+  // Get player limits for a club
+  app.get("/api/clubs/:clubId/player-limits", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const clubId = parseInt(req.params.clubId);
+      const club = await storage.getClubById(clubId);
+      
+      if (!club) {
+        return res.status(404).json({ error: "Club not found" });
+      }
+      
+      // Only admin and club owner can view player limits
+      if (req.user!.role !== "admin" && (req.user!.role !== "club_owner" || club.ownerId !== req.user!.id)) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      const playerLimits = await storage.getClubPlayerLimits(clubId);
+      
+      if (!playerLimits) {
+        // Return default limits if none are set
+        return res.json({
+          clubId,
+          maxPlayers: 50,
+          currentPlayers: 0,
+          updatedAt: new Date(),
+        });
+      }
+      
+      res.json(playerLimits);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  // Set player limits for a club (admin only)
+  app.post("/api/clubs/:clubId/player-limits", hasRole("admin"), async (req: Request, res: Response) => {
+    try {
+      const clubId = parseInt(req.params.clubId);
+      const club = await storage.getClubById(clubId);
+      
+      if (!club) {
+        return res.status(404).json({ error: "Club not found" });
+      }
+      
+      // Validate request body
+      const validatedData = insertClubPlayerLimitsSchema.parse({
+        ...req.body,
+        clubId,
+        updatedBy: req.user!.id,
+      });
+      
+      // Ensure maxPlayers is a positive integer
+      if (!validatedData.maxPlayers || validatedData.maxPlayers < 1) {
+        return res.status(400).json({ error: "maxPlayers must be a positive integer" });
+      }
+      
+      const playerLimits = await storage.setClubPlayerLimits(validatedData);
+      
+      res.status(201).json(playerLimits);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  // Update player limits for a club (admin only)
+  app.put("/api/clubs/:clubId/player-limits", hasRole("admin"), async (req: Request, res: Response) => {
+    try {
+      const clubId = parseInt(req.params.clubId);
+      const club = await storage.getClubById(clubId);
+      
+      if (!club) {
+        return res.status(404).json({ error: "Club not found" });
+      }
+      
+      const existingLimits = await storage.getClubPlayerLimits(clubId);
+      
+      if (!existingLimits) {
+        return res.status(404).json({ error: "Player limits not found for this club" });
+      }
+      
+      // Prepare update data
+      const updateData = {
+        ...req.body,
+        updatedBy: req.user!.id,
+      };
+      
+      // Ensure maxPlayers is a positive integer if provided
+      if (updateData.maxPlayers !== undefined && updateData.maxPlayers < 1) {
+        return res.status(400).json({ error: "maxPlayers must be a positive integer" });
+      }
+      
+      const updatedLimits = await storage.updateClubPlayerLimits(clubId, updateData);
+      
+      res.json(updatedLimits);
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  // Check player limits for a club
+  app.get("/api/clubs/:clubId/check-player-limit", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const clubId = parseInt(req.params.clubId);
+      const club = await storage.getClubById(clubId);
+      
+      if (!club) {
+        return res.status(404).json({ error: "Club not found" });
+      }
+      
+      // Check if user has access to this club
+      if (req.user!.role !== "admin") {
+        if (req.user!.role === "club_owner" && club.ownerId !== req.user!.id) {
+          return res.status(403).json({ error: "Access denied" });
+        }
+        
+        if (req.user!.role === "dealer" && req.user!.clubOwnerId) {
+          const clubOwner = await storage.getUserById(req.user!.clubOwnerId);
+          if (!clubOwner || clubOwner.id !== club.ownerId) {
+            return res.status(403).json({ error: "Access denied" });
+          }
+        }
+      }
+      
+      const limitStatus = await storage.checkPlayerLimit(clubId);
+      
+      res.json(limitStatus);
     } catch (error) {
       handleError(res, error);
     }
