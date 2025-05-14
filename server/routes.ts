@@ -360,22 +360,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get players for a club
   app.get("/api/clubs/:clubId/players", isAuthenticated, async (req: Request, res: Response) => {
     try {
+      console.log(`Getting players for clubId: ${req.params.clubId}`);
+      console.log(`User authenticated: ${JSON.stringify(req.user)}`);
+      
       const clubId = parseInt(req.params.clubId);
       const club = await storage.getClubById(clubId);
       
       if (!club) {
+        console.log(`Club not found: ${clubId}`);
         return res.status(404).json({ error: "Club not found" });
       }
+      console.log(`Club found: ${JSON.stringify(club)}`);
       
       // Check if user has access
       if (req.user!.role !== "admin") {
+        console.log(`User is not admin, checking permissions: ${req.user!.role}`);
+        
         if (req.user!.role === "club_owner" && club.ownerId !== req.user!.id) {
+          console.log(`Access denied: Club owner ${req.user!.id} doesn't match club owner ${club.ownerId}`);
           return res.status(403).json({ error: "Access denied" });
         }
         
         if (req.user!.role === "dealer" && req.user!.clubOwnerId) {
+          console.log(`User is dealer with clubOwnerId: ${req.user!.clubOwnerId}`);
           const clubOwner = await storage.getUserById(req.user!.clubOwnerId);
+          console.log(`Club owner found: ${JSON.stringify(clubOwner)}`);
           if (!clubOwner || clubOwner.id !== club.ownerId) {
+            console.log(`Access denied: Dealer's club owner ${clubOwner?.id} doesn't match club's owner ${club.ownerId}`);
             return res.status(403).json({ error: "Access denied" });
           }
         }
@@ -499,24 +510,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get seats for a table
   app.get("/api/tables/:tableId/seats", isAuthenticated, async (req: Request, res: Response) => {
     try {
+      console.log(`Getting seats for tableId: ${req.params.tableId}`);
+      console.log(`User authenticated: ${JSON.stringify(req.user)}`);
+      
       const tableId = parseInt(req.params.tableId);
       const table = await storage.getTableById(tableId);
       
       if (!table) {
+        console.log(`Table not found: ${tableId}`);
         return res.status(404).json({ error: "Table not found" });
       }
+      console.log(`Table found: ${JSON.stringify(table)}`);
       
       // Check if user has access
       if (req.user!.role !== "admin") {
+        console.log(`User is not admin, checking permissions: ${req.user!.role}`);
         const club = await storage.getClubById(table.clubId);
+        console.log(`Club found: ${JSON.stringify(club)}`);
         
         if (req.user!.role === "club_owner" && club?.ownerId !== req.user!.id) {
+          console.log(`Access denied: Club owner ${req.user!.id} doesn't match club owner ${club?.ownerId}`);
           return res.status(403).json({ error: "Access denied" });
         }
         
         if (req.user!.role === "dealer" && req.user!.clubOwnerId) {
+          console.log(`User is dealer with clubOwnerId: ${req.user!.clubOwnerId}`);
           const clubOwner = await storage.getUserById(req.user!.clubOwnerId);
+          console.log(`Club owner found: ${JSON.stringify(clubOwner)}`);
           if (!clubOwner || clubOwner.id !== club?.ownerId) {
+            console.log(`Access denied: Dealer's club owner ${clubOwner?.id} doesn't match club's owner ${club?.ownerId}`);
             return res.status(403).json({ error: "Access denied" });
           }
         }
