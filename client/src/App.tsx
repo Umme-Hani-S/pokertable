@@ -105,6 +105,11 @@ function Router() {
       
       {/* Dealer Routes */}
       <ProtectedRoute 
+        path="/table-design" 
+        component={TableDesign}
+        roles={["admin", "club_owner", "dealer"]} 
+      />
+      <ProtectedRoute 
         path="/tables/:id" 
         component={TableDetail}
         roles={["admin", "club_owner", "dealer"]} 

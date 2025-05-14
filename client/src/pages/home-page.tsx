@@ -15,7 +15,7 @@ export default function HomePage() {
       } else if (user.role === 'club_owner') {
         setLocation('/clubs');
       } else if (user.role === 'dealer') {
-        setLocation('/tables/1/poker');
+        setLocation('/table-design');
       }
     }
   }, [user, isLoading, setLocation]);
