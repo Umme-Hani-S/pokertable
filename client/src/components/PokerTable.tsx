@@ -7,7 +7,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '.
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
-import PlayerSearchSelect from './PlayerSearchSelect';
+import AutocompleteSelect from './AutocompleteSelect';
 import pokerTableImg from '../assets/poker-table.jpg';
 
 // API functions
@@ -494,11 +494,11 @@ const PokerTable: React.FC = () => {
                 ) : (
                   <div className="space-y-2">
                     <Label htmlFor="playerId">Select Player</Label>
-                    <PlayerSearchSelect
-                      players={players}
-                      selectedPlayerId={selectedPlayerId}
+                    <AutocompleteSelect
+                      items={players}
+                      selectedId={selectedPlayerId}
                       onSelect={(id) => setSelectedPlayerId(id)}
-                      placeholder="Search for player..."
+                      placeholder="Type to search players..."
                     />
                   </div>
                 )}
