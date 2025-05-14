@@ -149,6 +149,8 @@ export const insertTableSeatSchema = createInsertSchema(tableSeats).pick({
   status: true,
   playerId: true,
   sessionId: true,
+  timeStarted: true,
+  timeElapsed: true,
 });
 
 export type InsertTableSeat = z.infer<typeof insertTableSeatSchema>;

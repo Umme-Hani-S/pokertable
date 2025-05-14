@@ -7,6 +7,7 @@ import session from "express-session";
 import { pool } from './db';
 
 const PostgresSessionStore = connectPg(session);
+type SessionStore = ReturnType<typeof connectPg>;
 
 export interface IStorage {
   // User methods
@@ -71,11 +72,11 @@ export interface IStorage {
   decreaseCurrentPlayers(clubId: number): Promise<schema.ClubPlayerLimits | undefined>;
   checkPlayerLimit(clubId: number): Promise<{hasReachedLimit: boolean, currentCount: number, maxCount: number}>;
   
-  sessionStore: session.SessionStore;
+  sessionStore: SessionStore;
 }
 
 export class DatabaseStorage implements IStorage {
-  sessionStore: session.SessionStore;
+  sessionStore: SessionStore;
 
   constructor() {
     this.sessionStore = new PostgresSessionStore({ 
