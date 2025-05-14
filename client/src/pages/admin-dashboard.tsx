@@ -1,18 +1,30 @@
 import { useState } from "react";
 import { useAuth } from "../hooks/use-auth";
+import { useLocation } from "wouter";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
-import { useLocation } from "wouter";
+import { Loader2, Plus, Settings, Users } from "lucide-react";
 
 export default function AdminDashboard() {
   const { user, logoutMutation } = useAuth();
   const [_, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState("overview");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleLogout = () => {
     logoutMutation.mutate();
     setLocation("/auth");
+  };
+
+  const handleCreateClub = () => {
+    // In a real implementation, this would show a modal form
+    alert("Club creation would be implemented here");
+  };
+
+  const handleCreateUser = () => {
+    // In a real implementation, this would show a modal form
+    alert("User creation would be implemented here");
   };
 
   return (
@@ -62,18 +74,7 @@ export default function AdminDashboard() {
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Total Clubs</CardTitle>
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      className="h-4 w-4 text-muted-foreground"
-                    >
-                      <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                    </svg>
+                    <Settings className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">0</div>
@@ -83,20 +84,7 @@ export default function AdminDashboard() {
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Total Tables</CardTitle>
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      className="h-4 w-4 text-muted-foreground"
-                    >
-                      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                      <circle cx="9" cy="7" r="4" />
-                      <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
-                    </svg>
+                    <Users className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">0</div>
@@ -106,19 +94,7 @@ export default function AdminDashboard() {
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Active Sessions</CardTitle>
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      className="h-4 w-4 text-muted-foreground"
-                    >
-                      <rect width="20" height="14" x="2" y="5" rx="2" />
-                      <path d="M2 10h20" />
-                    </svg>
+                    <Settings className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">0</div>
@@ -134,10 +110,10 @@ export default function AdminDashboard() {
                   </CardHeader>
                   <CardContent className="grid gap-4 grid-cols-2">
                     <Button className="w-full" onClick={() => setActiveTab("clubs")}>
-                      Create New Club
+                      Create Club
                     </Button>
                     <Button className="w-full" onClick={() => setActiveTab("users")}>
-                      Add New User
+                      Add User
                     </Button>
                   </CardContent>
                 </Card>
@@ -167,32 +143,62 @@ export default function AdminDashboard() {
             
             {/* Clubs Tab */}
             <TabsContent value="clubs" className="space-y-4">
+              <div className="flex justify-between items-center">
+                <h3 className="text-xl font-semibold">Clubs Management</h3>
+                <Button onClick={handleCreateClub}>
+                  <Plus className="mr-2 h-4 w-4" /> Create New Club
+                </Button>
+              </div>
+              
               <Card>
                 <CardHeader>
-                  <CardTitle>Clubs Management</CardTitle>
+                  <CardTitle>Clubs</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-center py-10">
-                    <h3 className="text-xl font-semibold mb-2">No Clubs Added Yet</h3>
-                    <p className="text-muted-foreground mb-4">Create your first club to get started</p>
-                    <Button>Create Club</Button>
-                  </div>
+                  {isLoading ? (
+                    <div className="flex justify-center py-8">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                  ) : (
+                    <div className="text-center py-10">
+                      <h3 className="text-xl font-semibold mb-2">No Clubs Added Yet</h3>
+                      <p className="text-muted-foreground mb-4">Create your first club to get started</p>
+                      <Button onClick={handleCreateClub}>
+                        <Plus className="mr-2 h-4 w-4" /> Create Club
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
             
             {/* Users Tab */}
             <TabsContent value="users" className="space-y-4">
+              <div className="flex justify-between items-center">
+                <h3 className="text-xl font-semibold">Users Management</h3>
+                <Button onClick={handleCreateUser}>
+                  <Plus className="mr-2 h-4 w-4" /> Create New User
+                </Button>
+              </div>
+              
               <Card>
                 <CardHeader>
-                  <CardTitle>Users Management</CardTitle>
+                  <CardTitle>System Users</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-center py-10">
-                    <h3 className="text-xl font-semibold mb-2">User Administration</h3>
-                    <p className="text-muted-foreground mb-4">Create and manage users in the system</p>
-                    <Button>Add New User</Button>
-                  </div>
+                  {isLoading ? (
+                    <div className="flex justify-center py-8">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                  ) : (
+                    <div className="text-center py-10">
+                      <h3 className="text-xl font-semibold mb-2">No Additional Users</h3>
+                      <p className="text-muted-foreground mb-4">Create a club first, then add users to it</p>
+                      <Button onClick={handleCreateUser}>
+                        <Plus className="mr-2 h-4 w-4" /> Create User
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
