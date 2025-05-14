@@ -10,11 +10,12 @@ import { Label } from './ui/label';
 import AutocompleteSelect from './AutocompleteSelect';
 import pokerTableImg from '../assets/poker-table.jpg';
 
+import { apiRequest } from '@/lib/queryClient';
+
 // API functions
 const fetchSeats = async (tableId: number = 1): Promise<Seat[]> => {
   try {
-    const response = await fetch(`/api/tables/${tableId}/seats`);
-    if (!response.ok) throw new Error('Failed to fetch seats');
+    const response = await apiRequest('GET', `/api/tables/${tableId}/seats`);
     return response.json();
   } catch (error) {
     console.error('Error fetching seats:', error);
@@ -24,8 +25,7 @@ const fetchSeats = async (tableId: number = 1): Promise<Seat[]> => {
 
 const fetchPlayers = async (clubId: number = 1): Promise<Player[]> => {
   try {
-    const response = await fetch(`/api/clubs/${clubId}/players`);
-    if (!response.ok) throw new Error('Failed to fetch players');
+    const response = await apiRequest('GET', `/api/clubs/${clubId}/players`);
     return response.json();
   } catch (error) {
     console.error('Error fetching players:', error);
@@ -39,13 +39,11 @@ const updateSeatStatus = async (
   playerId?: number
 ): Promise<Seat> => {
   try {
-    const response = await fetch(`/api/seats/${seatId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status, playerId }),
-    });
-    
-    if (!response.ok) throw new Error('Failed to update seat status');
+    const response = await apiRequest(
+      'PATCH',
+      `/api/seats/${seatId}`,
+      { status, playerId }
+    );
     return response.json();
   } catch (error) {
     console.error('Error updating seat status:', error);
@@ -55,13 +53,11 @@ const updateSeatStatus = async (
 
 const createPlayer = async (name: string, clubId: number): Promise<Player> => {
   try {
-    const response = await fetch(`/api/clubs/${clubId}/players`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, clubId }),
-    });
-    
-    if (!response.ok) throw new Error('Failed to create player');
+    const response = await apiRequest(
+      'POST',
+      `/api/clubs/${clubId}/players`,
+      { name, clubId }
+    );
     return response.json();
   } catch (error) {
     console.error('Error creating player:', error);
