@@ -1,37 +1,73 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../components/ui/card";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "../components/ui/form";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { z } from "zod";
 import { useAuth } from "../hooks/use-auth";
-import { Loader2 } from "lucide-react";
+import { Button } from "../components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "../components/ui/form";
+import { Input } from "../components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 
 const loginSchema = z.object({
-  username: z.string().min(3, "Username must be at least 3 characters"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  username: z.string().min(3, {
+    message: "Username must be at least 3 characters.",
+  }),
+  password: z.string().min(6, {
+    message: "Password must be at least 6 characters.",
+  }),
 });
 
 const registerSchema = z.object({
-  username: z.string().min(3, "Username must be at least 3 characters"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-  email: z.string().email("Please enter a valid email"),
-  fullName: z.string().optional(),
+  username: z.string().min(3, {
+    message: "Username must be at least 3 characters.",
+  }),
+  email: z.string().email({
+    message: "Please enter a valid email address.",
+  }),
+  password: z.string().min(6, {
+    message: "Password must be at least 6 characters.",
+  }),
+  confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
 });
 
-type LoginFormValues = z.infer<typeof loginSchema>;
-type RegisterFormValues = z.infer<typeof registerSchema>;
-
 export default function AuthPage() {
-  const [activeTab, setActiveTab] = useState<string>("login");
-  const [location, setLocation] = useLocation();
-  const { user, isLoading, loginMutation, registerMutation } = useAuth();
+  const [activeTab, setActiveTab] = useState("login");
+  const { user, loginMutation, registerMutation } = useAuth();
+  const [_, setLocation] = useLocation();
+  
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      if (user.role === 'admin') {
+        setLocation('/admin');
+      } else if (user.role === 'club_owner') {
+        setLocation('/clubs');
+      } else {
+        setLocation('/tables');
+      }
+    }
+  }, [user, setLocation]);
 
-  const loginForm = useForm<LoginFormValues>({
+  const loginForm = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
       username: "",
@@ -39,56 +75,47 @@ export default function AuthPage() {
     },
   });
 
-  const registerForm = useForm<RegisterFormValues>({
+  const registerForm = useForm<z.infer<typeof registerSchema>>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
       username: "",
-      password: "",
       email: "",
-      fullName: "",
+      password: "",
+      confirmPassword: "",
     },
   });
 
-  // Redirect to home if already logged in
-  useEffect(() => {
-    if (user) {
-      setLocation("/");
-    }
-  }, [user, setLocation]);
+  function onLoginSubmit(values: z.infer<typeof loginSchema>) {
+    loginMutation.mutate(values);
+  }
 
-  const onLoginSubmit = (data: LoginFormValues) => {
-    loginMutation.mutate(data);
-  };
-
-  const onRegisterSubmit = (data: RegisterFormValues) => {
+  function onRegisterSubmit(values: z.infer<typeof registerSchema>) {
+    const { confirmPassword, ...userData } = values;
     registerMutation.mutate({
-      ...data,
-      role: "club_owner", // Default to club owner for now
+      ...userData,
+      role: "dealer", // Default role for new users
     });
-  };
+  }
 
   return (
-    <div className="flex min-h-screen">
-      {/* Left column - Form */}
-      <div className="flex flex-col justify-center w-full max-w-md p-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold">Poker Club Manager</h1>
-          <p className="text-muted-foreground">Sign in or register to access your club management dashboard</p>
-        </div>
-
-        <Tabs defaultValue="login" value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid grid-cols-2 mb-6">
-            <TabsTrigger value="login">Login</TabsTrigger>
-            <TabsTrigger value="register">Register</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="login">
-            <Card>
-              <CardHeader>
-                <CardTitle>Welcome Back</CardTitle>
-                <CardDescription>Enter your credentials to access your account</CardDescription>
-              </CardHeader>
-              <CardContent>
+    <div className="min-h-screen flex">
+      {/* Left Column - Auth Form */}
+      <div className="w-full md:w-1/2 flex items-center justify-center p-4 md:p-12">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="text-2xl">Poker Club Manager</CardTitle>
+            <CardDescription>
+              Manage your poker club efficiently
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="grid w-full grid-cols-2 mb-6">
+                <TabsTrigger value="login">Login</TabsTrigger>
+                <TabsTrigger value="register">Create Account</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="login">
                 <Form {...loginForm}>
                   <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
                     <FormField
@@ -98,7 +125,7 @@ export default function AuthPage() {
                         <FormItem>
                           <FormLabel>Username</FormLabel>
                           <FormControl>
-                            <Input placeholder="johndoe" {...field} />
+                            <Input placeholder="Your username" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -111,7 +138,7 @@ export default function AuthPage() {
                         <FormItem>
                           <FormLabel>Password</FormLabel>
                           <FormControl>
-                            <Input type="password" placeholder="••••••••" {...field} />
+                            <Input type="password" placeholder="Your password" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -119,43 +146,16 @@ export default function AuthPage() {
                     />
                     <Button 
                       type="submit" 
-                      className="w-full" 
+                      className="w-full"
                       disabled={loginMutation.isPending}
                     >
-                      {loginMutation.isPending ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
-                          Logging in...
-                        </>
-                      ) : (
-                        "Login"
-                      )}
+                      {loginMutation.isPending ? "Logging in..." : "Login"}
                     </Button>
                   </form>
                 </Form>
-              </CardContent>
-              <CardFooter className="flex flex-col items-start">
-                <p className="text-sm text-muted-foreground">
-                  Don't have an account?{" "}
-                  <button
-                    type="button"
-                    className="text-primary hover:underline"
-                    onClick={() => setActiveTab("register")}
-                  >
-                    Register here
-                  </button>
-                </p>
-              </CardFooter>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="register">
-            <Card>
-              <CardHeader>
-                <CardTitle>Create an Account</CardTitle>
-                <CardDescription>Fill in your details to create your account</CardDescription>
-              </CardHeader>
-              <CardContent>
+              </TabsContent>
+              
+              <TabsContent value="register">
                 <Form {...registerForm}>
                   <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-4">
                     <FormField
@@ -165,7 +165,7 @@ export default function AuthPage() {
                         <FormItem>
                           <FormLabel>Username</FormLabel>
                           <FormControl>
-                            <Input placeholder="johndoe" {...field} />
+                            <Input placeholder="Create a username" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -178,20 +178,7 @@ export default function AuthPage() {
                         <FormItem>
                           <FormLabel>Email</FormLabel>
                           <FormControl>
-                            <Input type="email" placeholder="john.doe@example.com" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={registerForm.control}
-                      name="fullName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Full Name (Optional)</FormLabel>
-                          <FormControl>
-                            <Input placeholder="John Doe" {...field} />
+                            <Input type="email" placeholder="Your email address" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -204,7 +191,20 @@ export default function AuthPage() {
                         <FormItem>
                           <FormLabel>Password</FormLabel>
                           <FormControl>
-                            <Input type="password" placeholder="••••••••" {...field} />
+                            <Input type="password" placeholder="Create a password" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={registerForm.control}
+                      name="confirmPassword"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Confirm Password</FormLabel>
+                          <FormControl>
+                            <Input type="password" placeholder="Confirm your password" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -212,61 +212,63 @@ export default function AuthPage() {
                     />
                     <Button 
                       type="submit" 
-                      className="w-full" 
+                      className="w-full"
                       disabled={registerMutation.isPending}
                     >
-                      {registerMutation.isPending ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
-                          Creating account...
-                        </>
-                      ) : (
-                        "Register"
-                      )}
+                      {registerMutation.isPending ? "Creating account..." : "Create Account"}
                     </Button>
                   </form>
                 </Form>
-              </CardContent>
-              <CardFooter className="flex flex-col items-start">
-                <p className="text-sm text-muted-foreground">
-                  Already have an account?{" "}
-                  <button
-                    type="button"
-                    className="text-primary hover:underline"
-                    onClick={() => setActiveTab("login")}
-                  >
-                    Login here
-                  </button>
-                </p>
-              </CardFooter>
-            </Card>
-          </TabsContent>
-        </Tabs>
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+          <CardFooter className="flex justify-center text-sm text-muted-foreground">
+            Poker Club Manager - Time tracking made easy
+          </CardFooter>
+        </Card>
       </div>
 
-      {/* Right column - Hero */}
-      <div className="hidden lg:block w-1/2 bg-gradient-to-br from-indigo-500 to-purple-600">
-        <div className="flex flex-col justify-center items-center h-full text-white p-12">
-          <h1 className="text-4xl font-bold mb-4">Poker Club Manager</h1>
-          <p className="text-xl mb-6 text-center">
-            The complete solution for poker clubs to manage tables, track player time, and streamline operations.
-          </p>
-          <div className="grid grid-cols-2 gap-6 max-w-2xl">
-            <div className="bg-white/10 p-4 rounded-lg backdrop-blur-sm">
-              <h3 className="text-lg font-medium mb-2">Multiple Clubs</h3>
-              <p>Manage multiple poker clubs under a single admin account</p>
+      {/* Right Column - Hero Section */}
+      <div className="hidden md:flex md:w-1/2 bg-gradient-to-br from-primary to-primary-foreground items-center justify-center p-12">
+        <div className="max-w-md text-white">
+          <h1 className="text-4xl font-bold mb-4">Manage Your Poker Club with Ease</h1>
+          <p className="text-lg mb-6">Streamline your poker club operations, manage tables, track player time, and optimize your business.</p>
+          <div className="space-y-4">
+            <div className="flex items-start space-x-3">
+              <div className="mt-0.5 bg-white bg-opacity-20 p-1 rounded-full">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                  <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+              </div>
+              <div>
+                <h3 className="font-medium">Real-time tracking</h3>
+                <p className="text-white text-opacity-80">Monitor player time and table activity as it happens</p>
+              </div>
             </div>
-            <div className="bg-white/10 p-4 rounded-lg backdrop-blur-sm">
-              <h3 className="text-lg font-medium mb-2">Player Tracking</h3>
-              <p>Track player sessions and time at the table with precision</p>
+            <div className="flex items-start space-x-3">
+              <div className="mt-0.5 bg-white bg-opacity-20 p-1 rounded-full">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                  <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+              </div>
+              <div>
+                <h3 className="font-medium">Multi-club management</h3>
+                <p className="text-white text-opacity-80">Manage multiple venues from a single dashboard</p>
+              </div>
             </div>
-            <div className="bg-white/10 p-4 rounded-lg backdrop-blur-sm">
-              <h3 className="text-lg font-medium mb-2">Table Management</h3>
-              <p>Easily manage table status, seats, and active players</p>
-            </div>
-            <div className="bg-white/10 p-4 rounded-lg backdrop-blur-sm">
-              <h3 className="text-lg font-medium mb-2">Dealer Interface</h3>
-              <p>Simple interface for dealers to manage tables in real-time</p>
+            <div className="flex items-start space-x-3">
+              <div className="mt-0.5 bg-white bg-opacity-20 p-1 rounded-full">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                  <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+              </div>
+              <div>
+                <h3 className="font-medium">Smart player database</h3>
+                <p className="text-white text-opacity-80">Keep track of all your players and their history</p>
+              </div>
             </div>
           </div>
         </div>

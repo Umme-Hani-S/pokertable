@@ -1,6 +1,6 @@
 import express, { Request, Response, NextFunction } from "express";
 import { log, setupVite, serveStatic } from "./vite";
-import { registerRoutes } from "./routes-saas";
+import { registerRoutes } from "./routes";
 
 // Create Express app
 const app = express();
