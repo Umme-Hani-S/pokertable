@@ -1,6 +1,6 @@
 import { Express, Request, Response, NextFunction } from "express";
 import { Server, createServer } from "http";
-import { setupAuth, isAuthenticated, hasRole, hasClubAccess } from "./auth";
+import { setupAuth, isAuthenticated, hasRole, hasClubAccess, hashPassword } from "./auth";
 import { storage } from "./storage";
 import { z } from "zod";
 import { insertUserSchema, insertClubSchema, insertTableSchema, insertPlayerSchema } from "../shared/schema";
