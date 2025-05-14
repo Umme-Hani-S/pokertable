@@ -38,14 +38,19 @@ const updateSeatStatus = async (
   status: string, 
   playerId?: number
 ): Promise<Seat> => {
-  const response = await fetch(`/api/seats/${seatId}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ status, playerId }),
-  });
-  
-  if (!response.ok) throw new Error('Failed to update seat status');
-  return response.json();
+  try {
+    const response = await fetch(`/api/seats/${seatId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status, playerId }),
+    });
+    
+    if (!response.ok) throw new Error('Failed to update seat status');
+    return response.json();
+  } catch (error) {
+    console.error('Error updating seat status:', error);
+    throw error;
+  }
 };
 
 const createPlayer = async (name: string, clubId: number): Promise<Player> => {
@@ -64,10 +69,12 @@ const createPlayer = async (name: string, clubId: number): Promise<Player> => {
   }
 };
 
-const PokerTable: React.FC = () => {
-  // Default to table ID 1 and club ID 1 - these would normally come from route params or context
-  const [tableId, setTableId] = useState<number>(1);
-  const [clubId, setClubId] = useState<number>(1);
+interface PokerTableProps {
+  tableId: number;
+  clubId: number;
+}
+
+const PokerTable: React.FC<PokerTableProps> = ({ tableId, clubId }) => {
   
   const [seats, setSeats] = useState<Seat[]>([]);
   const [players, setPlayers] = useState<Player[]>([]);
@@ -233,8 +240,8 @@ const PokerTable: React.FC = () => {
         // For Open seats, require player selection from UI
         else if (selectedSeat.status === 'Open') {
           if (showNewPlayerInput && newPlayerName.trim()) {
-            // Create new player
-            const newPlayer = await createPlayer(newPlayerName.trim());
+            // Create new player with club ID
+            const newPlayer = await createPlayer(newPlayerName.trim(), clubId);
             setPlayers(prevPlayers => [...prevPlayers, newPlayer]);
             playerId = newPlayer.id;
           } else if (selectedPlayerId) {
