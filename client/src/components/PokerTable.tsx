@@ -48,18 +48,27 @@ const updateSeatStatus = async (
   return response.json();
 };
 
-const createPlayer = async (name: string): Promise<Player> => {
-  const response = await fetch('/api/players', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name }),
-  });
-  
-  if (!response.ok) throw new Error('Failed to create player');
-  return response.json();
+const createPlayer = async (name: string, clubId: number): Promise<Player> => {
+  try {
+    const response = await fetch(`/api/clubs/${clubId}/players`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, clubId }),
+    });
+    
+    if (!response.ok) throw new Error('Failed to create player');
+    return response.json();
+  } catch (error) {
+    console.error('Error creating player:', error);
+    throw error;
+  }
 };
 
 const PokerTable: React.FC = () => {
+  // Default to table ID 1 and club ID 1 - these would normally come from route params or context
+  const [tableId, setTableId] = useState<number>(1);
+  const [clubId, setClubId] = useState<number>(1);
+  
   const [seats, setSeats] = useState<Seat[]>([]);
   const [players, setPlayers] = useState<Player[]>([]);
   const [loading, setLoading] = useState(true);
@@ -117,8 +126,8 @@ const PokerTable: React.FC = () => {
       try {
         setLoading(true);
         const [seatsData, playersData] = await Promise.all([
-          fetchSeats(),
-          fetchPlayers()
+          fetchSeats(tableId),
+          fetchPlayers(clubId)
         ]);
         setSeats(seatsData);
         setPlayers(playersData);
@@ -140,7 +149,7 @@ const PokerTable: React.FC = () => {
     };
     
     loadData();
-  }, []);
+  }, [tableId, clubId]);
   
   // Update player times every second
   useEffect(() => {
