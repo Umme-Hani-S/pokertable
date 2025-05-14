@@ -11,16 +11,26 @@ import AutocompleteSelect from './AutocompleteSelect';
 import pokerTableImg from '../assets/poker-table.jpg';
 
 // API functions
-const fetchSeats = async (): Promise<Seat[]> => {
-  const response = await fetch('/api/seats');
-  if (!response.ok) throw new Error('Failed to fetch seats');
-  return response.json();
+const fetchSeats = async (tableId: number = 1): Promise<Seat[]> => {
+  try {
+    const response = await fetch(`/api/tables/${tableId}/seats`);
+    if (!response.ok) throw new Error('Failed to fetch seats');
+    return response.json();
+  } catch (error) {
+    console.error('Error fetching seats:', error);
+    throw error;
+  }
 };
 
-const fetchPlayers = async (): Promise<Player[]> => {
-  const response = await fetch('/api/players');
-  if (!response.ok) throw new Error('Failed to fetch players');
-  return response.json();
+const fetchPlayers = async (clubId: number = 1): Promise<Player[]> => {
+  try {
+    const response = await fetch(`/api/clubs/${clubId}/players`);
+    if (!response.ok) throw new Error('Failed to fetch players');
+    return response.json();
+  } catch (error) {
+    console.error('Error fetching players:', error);
+    throw error;
+  }
 };
 
 const updateSeatStatus = async (
