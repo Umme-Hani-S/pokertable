@@ -178,6 +178,51 @@ export const insertPlayerTimeRecordSchema = createInsertSchema(playerTimeRecords
 export type InsertPlayerTimeRecord = z.infer<typeof insertPlayerTimeRecordSchema>;
 export type PlayerTimeRecord = typeof playerTimeRecords.$inferSelect;
 
+// Player Queue Model
+export const playerQueue = pgTable("player_queue", {
+  id: serial("id").primaryKey(),
+  clubId: integer("club_id").notNull().references(() => clubs.id),
+  playerId: integer("player_id").notNull().references(() => players.id),
+  tableId: integer("table_id").references(() => tables.id), // Optional - if assigned to specific table
+  priority: integer("priority").notNull().default(0), // Higher number = higher priority
+  status: varchar("status", { length: 20 }).notNull().default('waiting'), // waiting, assigned, removed
+  joinedAt: timestamp("joined_at").notNull().defaultNow(),
+  assignedAt: timestamp("assigned_at"),
+  notes: text("notes"),
+});
+
+export const insertPlayerQueueSchema = createInsertSchema(playerQueue).pick({
+  clubId: true,
+  playerId: true,
+  tableId: true,
+  priority: true,
+  status: true,
+  notes: true,
+});
+
+export type InsertPlayerQueue = z.infer<typeof insertPlayerQueueSchema>;
+export type PlayerQueue = typeof playerQueue.$inferSelect;
+
+// Club Player Limits - For admin to control player allocation
+export const clubPlayerLimits = pgTable("club_player_limits", {
+  id: serial("id").primaryKey(),
+  clubId: integer("club_id").notNull().references(() => clubs.id).unique(),
+  maxPlayers: integer("max_players").notNull().default(50), // Default limit of 50 players
+  currentPlayers: integer("current_players").notNull().default(0),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  updatedBy: integer("updated_by").references(() => users.id),
+});
+
+export const insertClubPlayerLimitsSchema = createInsertSchema(clubPlayerLimits).pick({
+  clubId: true,
+  maxPlayers: true,
+  currentPlayers: true,
+  updatedBy: true,
+});
+
+export type InsertClubPlayerLimits = z.infer<typeof insertClubPlayerLimitsSchema>;
+export type ClubPlayerLimits = typeof clubPlayerLimits.$inferSelect;
+
 // Relations
 export const usersRelations = relations(users, ({ many, one }) => ({
   clubs: many(clubs, { relationName: 'ownerClubs' }),
@@ -199,6 +244,11 @@ export const clubsRelations = relations(clubs, ({ one, many }) => ({
   }),
   tables: many(tables),
   players: many(players),
+  playerQueue: many(playerQueue),
+  playerLimits: one(clubPlayerLimits, {
+    fields: [clubs.id],
+    references: [clubPlayerLimits.clubId]
+  }),
 }));
 
 export const tablesRelations = relations(tables, ({ one, many }) => ({
@@ -213,6 +263,7 @@ export const tablesRelations = relations(tables, ({ one, many }) => ({
   }),
   seats: many(tableSeats),
   sessions: many(tableSessions),
+  queue: many(playerQueue),
 }));
 
 export const playersRelations = relations(players, ({ one, many }) => ({
@@ -222,6 +273,33 @@ export const playersRelations = relations(players, ({ one, many }) => ({
   }),
   seats: many(tableSeats),
   timeRecords: many(playerTimeRecords),
+  queueEntries: many(playerQueue),
+}));
+
+export const playerQueueRelations = relations(playerQueue, ({ one }) => ({
+  player: one(players, {
+    fields: [playerQueue.playerId],
+    references: [players.id]
+  }),
+  club: one(clubs, {
+    fields: [playerQueue.clubId],
+    references: [clubs.id]
+  }),
+  table: one(tables, {
+    fields: [playerQueue.tableId],
+    references: [tables.id]
+  }),
+}));
+
+export const clubPlayerLimitsRelations = relations(clubPlayerLimits, ({ one }) => ({
+  club: one(clubs, {
+    fields: [clubPlayerLimits.clubId],
+    references: [clubs.id]
+  }),
+  updatedByUser: one(users, {
+    fields: [clubPlayerLimits.updatedBy],
+    references: [users.id]
+  }),
 }));
 
 export const tableSessionsRelations = relations(tableSessions, ({ one, many }) => ({
