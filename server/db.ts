@@ -29,9 +29,11 @@ export const supabase = createClient(
   }
 );
 
-// Setup Drizzle ORM to work with the same database
-// Use direct postgres connection string for Supabase
-const databaseUrl = process.env.SUPABASE_URL;
+// Setup Drizzle ORM with the direct Postgres connection string
+// The DATABASE_URL is the proper PostgreSQL connection string from Supabase
+if (!process.env.DATABASE_URL) {
+  throw new Error("DATABASE_URL must be set in environment variables");
+}
 
-export const pool = new Pool({ connectionString: databaseUrl });
+export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 export const db = drizzle(pool, { schema });
