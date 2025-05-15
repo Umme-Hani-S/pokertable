@@ -52,7 +52,7 @@ CREATE TABLE "public"."players" (
 
 CREATE TABLE "public"."table_sessions" (
   "id" serial PRIMARY KEY NOT NULL,
-  "tableId" integer,
+  "table_id" integer,
   "startTime" timestamp with time zone DEFAULT now(),
   "endTime" timestamp with time zone,
   "dealerId" integer,
