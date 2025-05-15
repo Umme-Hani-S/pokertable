@@ -107,11 +107,11 @@ ALTER TABLE "public"."tables" ADD CONSTRAINT "tables_dealerId_fkey" FOREIGN KEY 
 ALTER TABLE "public"."players" ADD CONSTRAINT "players_clubId_fkey" FOREIGN KEY ("clubId") REFERENCES "public"."clubs"("id") ON DELETE CASCADE;
 
 ALTER TABLE "public"."table_sessions" ADD CONSTRAINT "table_sessions_table_id_fkey" FOREIGN KEY ("table_id") REFERENCES "public"."tables"("id") ON DELETE CASCADE;
-ALTER TABLE "public"."table_sessions" ADD CONSTRAINT "table_sessions_dealer_id_fkey" FOREIGN KEY ("dealer_id") REFERENCES "public"."users"("id");
+ALTER TABLE "public"."table_sessions" ADD CONSTRAINT "table_sessions_dealer_id_fkey" FOREIGN KEY ("dealerId") REFERENCES "public"."users"("id");
 
-ALTER TABLE "public"."table_seats" ADD CONSTRAINT "table_seats_table_id_fkey" FOREIGN KEY ("table_id") REFERENCES "public"."tables"("id") ON DELETE CASCADE;
-ALTER TABLE "public"."table_seats" ADD CONSTRAINT "table_seats_player_id_fkey" FOREIGN KEY ("player_id") REFERENCES "public"."players"("id");
-ALTER TABLE "public"."table_seats" ADD CONSTRAINT "table_seats_session_id_fkey" FOREIGN KEY ("session_id") REFERENCES "public"."table_sessions"("id");
+ALTER TABLE "public"."table_seats" ADD CONSTRAINT "table_seats_table_id_fkey" FOREIGN KEY ("tableId") REFERENCES "public"."tables"("id") ON DELETE CASCADE;
+ALTER TABLE "public"."table_seats" ADD CONSTRAINT "table_seats_player_id_fkey" FOREIGN KEY ("playerId") REFERENCES "public"."players"("id");
+ALTER TABLE "public"."table_seats" ADD CONSTRAINT "table_seats_session_id_fkey" FOREIGN KEY ("sessionId") REFERENCES "public"."table_sessions"("id");
 
 ALTER TABLE "public"."player_time_records" ADD CONSTRAINT "player_time_records_playerId_fkey" FOREIGN KEY ("playerId") REFERENCES "public"."players"("id");
 ALTER TABLE "public"."player_time_records" ADD CONSTRAINT "player_time_records_tableId_fkey" FOREIGN KEY ("tableId") REFERENCES "public"."tables"("id");
@@ -170,7 +170,7 @@ INSERT INTO "public"."players" ("name", "phone", "email", "club_id")
 SELECT 'Mike Johnson', '555-456-7890', 'mike@example.com', id FROM "public"."clubs" LIMIT 1;
 
 -- Create a table session
-INSERT INTO "public"."table_sessions" ("table_id", "dealer_id")
+INSERT INTO "public"."table_sessions" ("table_id", "dealerId")
 SELECT t.id, u.id
 FROM "public"."tables" t, "public"."users" u
 WHERE u.username = 'dealer'
