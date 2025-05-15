@@ -1,6 +1,4 @@
 import { db } from '../server/db';
-import fs from 'fs';
-import path from 'path';
 import { hashPassword } from '../server/auth';
 import {
   users,
@@ -13,47 +11,10 @@ import {
   clubPlayerLimits
 } from '../shared/schema';
 
-async function executeSqlMigration() {
+async function main() {
   try {
-    console.log('Executing SQL migration...');
-    
-    // Read the migration SQL
-    const sqlFile = path.join(process.cwd(), 'migrations-saas', '0000_hard_satana.sql');
-    const sql = fs.readFileSync(sqlFile, 'utf-8');
-    
-    // Split SQL into individual statements
-    const statements = sql.split('-->');
-    
-    // Execute each statement
-    for (const statement of statements) {
-      if (statement.trim()) {
-        try {
-          // Remove statement-breakpoint and execute
-          const cleanStatement = statement.replace('statement-breakpoint', '').trim();
-          if (cleanStatement) {
-            console.log(`Executing: ${cleanStatement.substring(0, 100)}...`);
-            await db.execute(cleanStatement);
-          }
-        } catch (error) {
-          console.error(`Error executing statement: ${error}`);
-          // Continue with next statement
-        }
-      }
-    }
-    
-    console.log('SQL migration complete!');
-    
-    // Now add sample data
-    await populateSampleData();
-  } catch (error) {
-    console.error('Migration error:', error);
-  }
-}
+    console.log('Setting up database with sample data...');
 
-async function populateSampleData() {
-  try {
-    console.log('\n=== Adding sample data ===');
-    
     // Create admin user
     const adminPassword = await hashPassword('admin123');
     const adminUser = await db.insert(users).values({
@@ -64,9 +25,9 @@ async function populateSampleData() {
       fullName: 'Admin User',
       isActive: true
     }).returning();
-    
+
     console.log('Created admin user:', adminUser[0].id);
-    
+
     // Create club owner
     const ownerPassword = await hashPassword('owner123');
     const clubOwner = await db.insert(users).values({
@@ -77,9 +38,9 @@ async function populateSampleData() {
       fullName: 'Club Owner',
       isActive: true
     }).returning();
-    
+
     console.log('Created club owner:', clubOwner[0].id);
-    
+
     // Create dealer
     const dealerPassword = await hashPassword('dealer123');
     const dealer = await db.insert(users).values({
@@ -91,9 +52,9 @@ async function populateSampleData() {
       isActive: true,
       clubOwnerId: clubOwner[0].id
     }).returning();
-    
+
     console.log('Created dealer:', dealer[0].id);
-    
+
     // Create a club
     const club = await db.insert(clubs).values({
       name: 'Sample Poker Club',
@@ -103,9 +64,9 @@ async function populateSampleData() {
       licenseLimit: 5,
       isActive: true
     }).returning();
-    
+
     console.log('Created club:', club[0].id);
-    
+
     // Create club player limits
     const clubLimits = await db.insert(clubPlayerLimits).values({
       clubId: club[0].id,
@@ -113,9 +74,9 @@ async function populateSampleData() {
       currentPlayers: 0,
       updatedBy: adminUser[0].id
     }).returning();
-    
+
     console.log('Created club player limits:', clubLimits[0].id);
-    
+
     // Create a table
     const pokerTable = await db.insert(tables).values({
       name: 'Main Table',
@@ -124,9 +85,9 @@ async function populateSampleData() {
       maxSeats: 9,
       isActive: true
     }).returning();
-    
+
     console.log('Created table:', pokerTable[0].id);
-    
+
     // Create sample players
     const samplePlayers = await Promise.all([
       db.insert(players).values({
@@ -151,10 +112,10 @@ async function populateSampleData() {
         notes: 'VIP player'
       }).returning()
     ]);
-    
+
     const playerList = samplePlayers.map(p => p[0]);
     console.log(`Created ${playerList.length} sample players`);
-    
+
     // Create table session
     const session = await db.insert(tableSessions).values({
       tableId: pokerTable[0].id,
@@ -163,16 +124,14 @@ async function populateSampleData() {
       isActive: true,
       startTime: new Date()
     }).returning();
-    
+
     console.log('Created table session:', session[0].id);
-    
+
     // Create table seats
     const seats = [];
     for (let i = 1; i <= pokerTable[0].maxSeats; i++) {
-      // Determine the initial status for each seat
       const seatStatus = i <= 3 ? 'Open' : 'Closed';
-      
-      // Create the seat with proper typing for status
+
       const seat = await db.insert(tableSeats).values({
         tableId: pokerTable[0].id,
         position: i,
@@ -181,12 +140,12 @@ async function populateSampleData() {
         sessionId: session[0].id,
         timeElapsed: 0
       }).returning();
-      
+
       seats.push(seat[0]);
     }
-    
+
     console.log(`Created ${seats.length} table seats`);
-    
+
     // Add players to queue
     const queueEntries = await Promise.all([
       db.insert(playerQueue).values({
@@ -206,25 +165,17 @@ async function populateSampleData() {
         notes: ''
       }).returning()
     ]);
-    
+
     console.log(`Created ${queueEntries.length} queue entries`);
-    
     console.log('\nSample data setup complete!');
     console.log('\nSample credentials:');
     console.log('Admin: username=admin, password=admin123');
     console.log('Club Owner: username=owner, password=owner123');
     console.log('Dealer: username=dealer, password=dealer123');
-    
+
   } catch (error) {
-    console.error('Error adding sample data:', error);
+    console.error('Error setting up sample data:', error);
   }
 }
 
-// Run the migration
-executeSqlMigration().then(() => {
-  console.log('Migration completed');
-  process.exit(0);
-}).catch(err => {
-  console.error('Migration failed:', err);
-  process.exit(1);
-});
+main().catch(console.error);
