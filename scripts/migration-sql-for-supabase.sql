@@ -25,7 +25,7 @@ CREATE TABLE "public"."clubs" (
   "id" serial PRIMARY KEY NOT NULL,
   "name" text NOT NULL,
   "description" text,
-  "ownerId" integer,
+  "owner_id" integer,
   "maxTables" integer DEFAULT 3,
   "created_at" timestamp with time zone DEFAULT now()
 );
