@@ -1,6 +1,6 @@
 import { supabase } from './db';
-import * as schema from '@/../../shared/schema-saas';
-import { SeatStatus } from '@/../../shared/types';
+import * as schema from '../shared/schema';
+import { SeatStatus } from '../shared/types';
 
 export class DatabaseStorage {
   // User methods
