@@ -99,7 +99,7 @@ CREATE TABLE "public"."player_queue" (
 -- Add foreign key constraints
 ALTER TABLE "public"."club_player_limits" ADD CONSTRAINT "club_player_limits_clubId_fkey" FOREIGN KEY ("clubId") REFERENCES "public"."clubs"("id") ON DELETE CASCADE;
 
-ALTER TABLE "public"."clubs" ADD CONSTRAINT "clubs_ownerId_fkey" FOREIGN KEY ("ownerId") REFERENCES "public"."users"("id");
+ALTER TABLE "public"."clubs" ADD CONSTRAINT "clubs_owner_id_fkey" FOREIGN KEY ("owner_id") REFERENCES "public"."users"("id");
 
 ALTER TABLE "public"."tables" ADD CONSTRAINT "tables_clubId_fkey" FOREIGN KEY ("clubId") REFERENCES "public"."clubs"("id") ON DELETE CASCADE;
 ALTER TABLE "public"."tables" ADD CONSTRAINT "tables_dealerId_fkey" FOREIGN KEY ("dealerId") REFERENCES "public"."users"("id");
