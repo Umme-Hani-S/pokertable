@@ -17,8 +17,16 @@ if (!process.env.SUPABASE_URL || !process.env.SUPABASE_KEY) {
 
 // Create Supabase client for the storage.ts file
 export const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_KEY
+  process.env.SUPABASE_URL || '',
+  process.env.SUPABASE_KEY || '',
+  {
+    auth: {
+      persistSession: false
+    },
+    db: {
+      schema: 'public'
+    }
+  }
 );
 
 // Setup Drizzle ORM to work with the same database
