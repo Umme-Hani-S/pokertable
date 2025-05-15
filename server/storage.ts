@@ -2,7 +2,26 @@ import { supabase } from './db';
 import * as schema from '../shared/schema';
 import { SeatStatus } from '../shared/types';
 
+import session from 'express-session';
+import connectPg from 'connect-pg-simple';
+
+const PostgresSessionStore = connectPg(session);
+
 export class DatabaseStorage {
+  sessionStore: any;
+  
+  constructor() {
+    // Initialize session store using the DATABASE_URL
+    this.sessionStore = new PostgresSessionStore({
+      conObject: {
+        connectionString: process.env.DATABASE_URL,
+        ssl: {
+          rejectUnauthorized: false
+        }
+      },
+      createTableIfMissing: true
+    });
+  }
   // User methods
   async getUsers() {
     const { data, error } = await supabase

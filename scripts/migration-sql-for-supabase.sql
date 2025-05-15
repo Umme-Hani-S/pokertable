@@ -74,55 +74,55 @@ CREATE TABLE "public"."table_seats" (
 
 CREATE TABLE "public"."player_time_records" (
   "id" serial PRIMARY KEY NOT NULL,
-  "player_id" integer,
-  "table_id" integer,
-  "session_id" integer,
-  "time_in" timestamp with time zone,
-  "time_out" timestamp with time zone,
-  "elapsed_time" integer,
+  "playerId" integer,
+  "tableId" integer,
+  "sessionId" integer,
+  "timeIn" timestamp with time zone,
+  "timeOut" timestamp with time zone,
+  "elapsedTime" integer,
   "status" text,
   "created_at" timestamp with time zone DEFAULT now()
 );
 
 CREATE TABLE "public"."player_queue" (
   "id" serial PRIMARY KEY NOT NULL,
-  "player_id" integer,
-  "club_id" integer,
-  "table_id" integer,
+  "playerId" integer,
+  "clubId" integer,
+  "tableId" integer,
   "position" integer,
   "status" text DEFAULT 'waiting',
-  "player_name" text NOT NULL,
-  "joined_at" timestamp with time zone DEFAULT now(),
+  "playerName" text NOT NULL,
+  "joinedAt" timestamp with time zone DEFAULT now(),
   "created_at" timestamp with time zone DEFAULT now()
 );
 
 -- Add foreign key constraints
-ALTER TABLE "public"."club_player_limits" ADD CONSTRAINT "club_player_limits_club_id_fkey" FOREIGN KEY ("club_id") REFERENCES "public"."clubs"("id") ON DELETE CASCADE;
+ALTER TABLE "public"."club_player_limits" ADD CONSTRAINT "club_player_limits_clubId_fkey" FOREIGN KEY ("clubId") REFERENCES "public"."clubs"("id") ON DELETE CASCADE;
 
-ALTER TABLE "public"."clubs" ADD CONSTRAINT "clubs_owner_id_fkey" FOREIGN KEY ("owner_id") REFERENCES "public"."users"("id");
+ALTER TABLE "public"."clubs" ADD CONSTRAINT "clubs_ownerId_fkey" FOREIGN KEY ("ownerId") REFERENCES "public"."users"("id");
 
-ALTER TABLE "public"."tables" ADD CONSTRAINT "tables_club_id_fkey" FOREIGN KEY ("club_id") REFERENCES "public"."clubs"("id") ON DELETE CASCADE;
-ALTER TABLE "public"."tables" ADD CONSTRAINT "tables_dealer_id_fkey" FOREIGN KEY ("dealer_id") REFERENCES "public"."users"("id");
+ALTER TABLE "public"."tables" ADD CONSTRAINT "tables_clubId_fkey" FOREIGN KEY ("clubId") REFERENCES "public"."clubs"("id") ON DELETE CASCADE;
+ALTER TABLE "public"."tables" ADD CONSTRAINT "tables_dealerId_fkey" FOREIGN KEY ("dealerId") REFERENCES "public"."users"("id");
 
-ALTER TABLE "public"."players" ADD CONSTRAINT "players_club_id_fkey" FOREIGN KEY ("club_id") REFERENCES "public"."clubs"("id") ON DELETE CASCADE;
+ALTER TABLE "public"."players" ADD CONSTRAINT "players_clubId_fkey" FOREIGN KEY ("clubId") REFERENCES "public"."clubs"("id") ON DELETE CASCADE;
 
-ALTER TABLE "public"."table_sessions" ADD CONSTRAINT "table_sessions_table_id_fkey" FOREIGN KEY ("table_id") REFERENCES "public"."tables"("id") ON DELETE CASCADE;
-ALTER TABLE "public"."table_sessions" ADD CONSTRAINT "table_sessions_dealer_id_fkey" FOREIGN KEY ("dealer_id") REFERENCES "public"."users"("id");
+ALTER TABLE "public"."table_sessions" ADD CONSTRAINT "table_sessions_tableId_fkey" FOREIGN KEY ("tableId") REFERENCES "public"."tables"("id") ON DELETE CASCADE;
+ALTER TABLE "public"."table_sessions" ADD CONSTRAINT "table_sessions_dealerId_fkey" FOREIGN KEY ("dealerId") REFERENCES "public"."users"("id");
 
-ALTER TABLE "public"."table_seats" ADD CONSTRAINT "table_seats_table_id_fkey" FOREIGN KEY ("table_id") REFERENCES "public"."tables"("id") ON DELETE CASCADE;
-ALTER TABLE "public"."table_seats" ADD CONSTRAINT "table_seats_player_id_fkey" FOREIGN KEY ("player_id") REFERENCES "public"."players"("id");
-ALTER TABLE "public"."table_seats" ADD CONSTRAINT "table_seats_session_id_fkey" FOREIGN KEY ("session_id") REFERENCES "public"."table_sessions"("id");
+ALTER TABLE "public"."table_seats" ADD CONSTRAINT "table_seats_tableId_fkey" FOREIGN KEY ("tableId") REFERENCES "public"."tables"("id") ON DELETE CASCADE;
+ALTER TABLE "public"."table_seats" ADD CONSTRAINT "table_seats_playerId_fkey" FOREIGN KEY ("playerId") REFERENCES "public"."players"("id");
+ALTER TABLE "public"."table_seats" ADD CONSTRAINT "table_seats_sessionId_fkey" FOREIGN KEY ("sessionId") REFERENCES "public"."table_sessions"("id");
 
-ALTER TABLE "public"."player_time_records" ADD CONSTRAINT "player_time_records_player_id_fkey" FOREIGN KEY ("player_id") REFERENCES "public"."players"("id");
-ALTER TABLE "public"."player_time_records" ADD CONSTRAINT "player_time_records_table_id_fkey" FOREIGN KEY ("table_id") REFERENCES "public"."tables"("id");
-ALTER TABLE "public"."player_time_records" ADD CONSTRAINT "player_time_records_session_id_fkey" FOREIGN KEY ("session_id") REFERENCES "public"."table_sessions"("id");
+ALTER TABLE "public"."player_time_records" ADD CONSTRAINT "player_time_records_playerId_fkey" FOREIGN KEY ("playerId") REFERENCES "public"."players"("id");
+ALTER TABLE "public"."player_time_records" ADD CONSTRAINT "player_time_records_tableId_fkey" FOREIGN KEY ("tableId") REFERENCES "public"."tables"("id");
+ALTER TABLE "public"."player_time_records" ADD CONSTRAINT "player_time_records_sessionId_fkey" FOREIGN KEY ("sessionId") REFERENCES "public"."table_sessions"("id");
 
-ALTER TABLE "public"."player_queue" ADD CONSTRAINT "player_queue_player_id_fkey" FOREIGN KEY ("player_id") REFERENCES "public"."players"("id");
-ALTER TABLE "public"."player_queue" ADD CONSTRAINT "player_queue_club_id_fkey" FOREIGN KEY ("club_id") REFERENCES "public"."clubs"("id");
-ALTER TABLE "public"."player_queue" ADD CONSTRAINT "player_queue_table_id_fkey" FOREIGN KEY ("table_id") REFERENCES "public"."tables"("id");
+ALTER TABLE "public"."player_queue" ADD CONSTRAINT "player_queue_playerId_fkey" FOREIGN KEY ("playerId") REFERENCES "public"."players"("id");
+ALTER TABLE "public"."player_queue" ADD CONSTRAINT "player_queue_clubId_fkey" FOREIGN KEY ("clubId") REFERENCES "public"."clubs"("id");
+ALTER TABLE "public"."player_queue" ADD CONSTRAINT "player_queue_tableId_fkey" FOREIGN KEY ("tableId") REFERENCES "public"."tables"("id");
 
 -- Create unique indexes
-CREATE UNIQUE INDEX "table_position_idx" ON "public"."table_seats" USING btree ("table_id", "position");
+CREATE UNIQUE INDEX "table_position_idx" ON "public"."table_seats" USING btree ("tableId", "position");
 
 -- Insert sample admin user
 INSERT INTO "public"."users" ("username", "password", "role", "name")
