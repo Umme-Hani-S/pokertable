@@ -1,3 +1,4 @@
+
 import { db } from '../server/db';
 import { hashPassword } from '../server/auth';
 import {
@@ -7,6 +8,7 @@ import {
   players,
   tableSeats,
   tableSessions,
+  playerTimeRecords,
   playerQueue,
   clubPlayerLimits
 } from '../shared/schema';
@@ -14,6 +16,27 @@ import {
 async function main() {
   try {
     console.log('Setting up database with sample data...');
+
+    // Drop existing tables in reverse order of dependencies
+    await db.execute(sql`
+      DROP TABLE IF EXISTS club_player_limits CASCADE;
+      DROP TABLE IF EXISTS player_queue CASCADE;
+      DROP TABLE IF EXISTS player_time_records CASCADE;
+      DROP TABLE IF EXISTS table_seats CASCADE;
+      DROP TABLE IF EXISTS table_sessions CASCADE;
+      DROP TABLE IF EXISTS players CASCADE;
+      DROP TABLE IF EXISTS tables CASCADE;
+      DROP TABLE IF EXISTS clubs CASCADE;
+      DROP TABLE IF EXISTS users CASCADE;
+      DROP TYPE IF EXISTS user_role CASCADE;
+      DROP TYPE IF EXISTS seat_status CASCADE;
+    `);
+
+    // Create enums
+    await db.execute(sql`
+      CREATE TYPE user_role AS ENUM ('admin', 'club_owner', 'dealer');
+      CREATE TYPE seat_status AS ENUM ('Open', 'Playing', 'Break', 'Blocked', 'Closed');
+    `);
 
     // Create admin user
     const adminPassword = await hashPassword('admin123');
@@ -25,9 +48,9 @@ async function main() {
       fullName: 'Admin User',
       isActive: true
     }).returning();
-
+    
     console.log('Created admin user:', adminUser[0].id);
-
+    
     // Create club owner
     const ownerPassword = await hashPassword('owner123');
     const clubOwner = await db.insert(users).values({
@@ -38,9 +61,9 @@ async function main() {
       fullName: 'Club Owner',
       isActive: true
     }).returning();
-
+    
     console.log('Created club owner:', clubOwner[0].id);
-
+    
     // Create dealer
     const dealerPassword = await hashPassword('dealer123');
     const dealer = await db.insert(users).values({
@@ -52,9 +75,9 @@ async function main() {
       isActive: true,
       clubOwnerId: clubOwner[0].id
     }).returning();
-
+    
     console.log('Created dealer:', dealer[0].id);
-
+    
     // Create a club
     const club = await db.insert(clubs).values({
       name: 'Sample Poker Club',
@@ -64,9 +87,9 @@ async function main() {
       licenseLimit: 5,
       isActive: true
     }).returning();
-
+    
     console.log('Created club:', club[0].id);
-
+    
     // Create club player limits
     const clubLimits = await db.insert(clubPlayerLimits).values({
       clubId: club[0].id,
@@ -74,9 +97,9 @@ async function main() {
       currentPlayers: 0,
       updatedBy: adminUser[0].id
     }).returning();
-
+    
     console.log('Created club player limits:', clubLimits[0].id);
-
+    
     // Create a table
     const pokerTable = await db.insert(tables).values({
       name: 'Main Table',
@@ -85,9 +108,9 @@ async function main() {
       maxSeats: 9,
       isActive: true
     }).returning();
-
+    
     console.log('Created table:', pokerTable[0].id);
-
+    
     // Create sample players
     const samplePlayers = await Promise.all([
       db.insert(players).values({
@@ -112,10 +135,10 @@ async function main() {
         notes: 'VIP player'
       }).returning()
     ]);
-
+    
     const playerList = samplePlayers.map(p => p[0]);
     console.log(`Created ${playerList.length} sample players`);
-
+    
     // Create table session
     const session = await db.insert(tableSessions).values({
       tableId: pokerTable[0].id,
@@ -124,14 +147,14 @@ async function main() {
       isActive: true,
       startTime: new Date()
     }).returning();
-
+    
     console.log('Created table session:', session[0].id);
-
+    
     // Create table seats
     const seats = [];
     for (let i = 1; i <= pokerTable[0].maxSeats; i++) {
       const seatStatus = i <= 3 ? 'Open' : 'Closed';
-
+      
       const seat = await db.insert(tableSeats).values({
         tableId: pokerTable[0].id,
         position: i,
@@ -140,12 +163,12 @@ async function main() {
         sessionId: session[0].id,
         timeElapsed: 0
       }).returning();
-
+      
       seats.push(seat[0]);
     }
-
+    
     console.log(`Created ${seats.length} table seats`);
-
+    
     // Add players to queue
     const queueEntries = await Promise.all([
       db.insert(playerQueue).values({
@@ -165,16 +188,15 @@ async function main() {
         notes: ''
       }).returning()
     ]);
-
+    
     console.log(`Created ${queueEntries.length} queue entries`);
     console.log('\nSample data setup complete!');
     console.log('\nSample credentials:');
     console.log('Admin: username=admin, password=admin123');
     console.log('Club Owner: username=owner, password=owner123');
     console.log('Dealer: username=dealer, password=dealer123');
-
   } catch (error) {
-    console.error('Error setting up sample data:', error);
+    console.error('Error setting up database:', error);
   }
 }
 
