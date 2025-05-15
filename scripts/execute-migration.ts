@@ -1,6 +1,6 @@
 
 import { db } from '../server/db';
-import { sql } from 'drizzle-orm';
+import { sql } from '@neondatabase/serverless';
 import { hashPassword } from '../server/auth';
 import {
   users,
