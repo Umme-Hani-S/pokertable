@@ -1,5 +1,6 @@
 
 import { db } from '../server/db';
+import { sql } from 'drizzle-orm';
 import { hashPassword } from '../server/auth';
 import {
   users,
